@@ -62,7 +62,7 @@ std::tuple<std::vector<Point>, std::size_t> parse_map(const std::string& line, s
 
 std::tuple<std::vector<std::vector<Point>>, std::size_t> parse_obstacles(const std::string& line, std::size_t i) {
   std::vector<std::vector<Point>> res;
-  while (true) {
+  while (line[i] == '(') {
     const auto [map, index] = parse_map(line, i);
     res.push_back(map);
     i = index;
