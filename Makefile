@@ -5,3 +5,6 @@ solver: main.cpp
 
 clean:
 	-rm solver
+
+solver: clone.cpp
+	$(CXX) -o $@ $(CXXFLAGS) $^
