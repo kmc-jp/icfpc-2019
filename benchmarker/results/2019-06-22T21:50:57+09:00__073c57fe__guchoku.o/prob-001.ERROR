@@ -1,0 +1,2 @@
+Assertion failed: (false), function parse_booster_code, file guchoku.cpp, line 84.
+sh: line 1: 83465 Abort trap: 6           ./guchoku.o < /Users/admin/Documents/icfpc-2019/benchmarker/problems/part-1/prob-001.desc
