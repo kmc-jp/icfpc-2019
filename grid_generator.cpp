@@ -140,10 +140,8 @@ public:
         }
         int corner = 4, cmax = (vMin + vMax) / 2;
         // 禁止マスを # に
-
         for (auto p : oSqs)
         {
-            //if(p.x==20) cerr << p.x << " "<<p.y << endl;
             ret[p.x][p.y] = '#';
             // 右か左の端に繋げる
             bool l = true, r = true;
@@ -157,27 +155,40 @@ public:
                     r = false;
             }
             assert(l || r);
-            if (l)
+            if(l && r)
+            {
+                // more close 
+                if(p.y<tSize/2)
+                {
+                    for (int j = p.y; j >= 0; j--)
+                    {
+                        ret[p.x][j] = '#';
+                    }
+                }
+                else
+                {
+                    for (int j = p.y; j < tSize; j++)
+                    {
+                        ret[p.x][j] = '#';
+                    }
+                }
+            }
+            else if (l)
             {
                 for (int j = p.y; j >= 0; j--)
                 {
-                    if(p.x == 20)
-                    {
-                        // cerr << p.x << " "<< j << endl;
-                        cerr << ret[p.x-1][j] << endl;
-                    }
                     ret[p.x][j] = '#';
-                    if (p.x > 0 && ret[p.x - 1][j] == '#')
-                        break;
+                    // if (p.x > 0 && ret[p.x - 1][j] == '#')
+                    //    break;
                 }
             }
-            else
+            else // r
             {
                 for (int j = p.y; j < tSize; j++)
                 {
                     ret[p.x][j] = '#';
-                    if (p.x > 0 && ret[p.x - 1][j] == '#')
-                        break;
+                    // if (p.x > 0 && ret[p.x - 1][j] == '#')
+                    //    break;
                 }
             }
             corner += 2; // 怪しい
@@ -188,11 +199,12 @@ public:
             for (int j = 0; j < tSize; j++)
             {
                 if(0<i && i<tSize-1 && 0<j && j<tSize-1) continue;
+                if((i==0 || i==tSize-1)&&(j<=3 || tSize-3<=j)) continue;
                 if (corner > cmax)
                     break;
                 if (ret[i][j] != '*')
                     continue;
-                if ((i + j) % 2)
+                if ((i + j) % 3)
                     continue;
                 bool f = true;
                 for(int k=0;k<8;k++)
@@ -205,6 +217,18 @@ public:
                 {
                     ret[i][j] = '#';
                     corner += 2;
+                }
+            }
+        }
+        // othello
+        for(int i=1;i<tSize-1;i++)
+        {
+            for(int j=0;j<tSize;j++)
+            {
+                if(ret[i-1][j]=='#' && ret[i+1][j]=='#')
+                {
+                    assert(ret[i][j]!='.');
+                    ret[i][j] = '#';
                 }
             }
         }
