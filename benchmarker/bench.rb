@@ -78,7 +78,11 @@ class Bench
     sols = Dir.glob("*.sol.pre", base:dir)
 
     # Interactive Verifier
-    cmd = "cd #{__dir__}/verifier && npm run --silent verify"
+    if ENV["NO_VERIFY"]=="YES"
+      cmd = "cat" # Dummy program
+    else
+      cmd = "cd #{__dir__}/verifier && npm run --silent verify"
+    end
     Open3.popen2e(cmd){|sin,souterr,wt|
       sin.sync = true
       souterr.sync = true
