@@ -4,6 +4,7 @@
 #include <tuple>
 #include <iostream>
 #include <algorithm>
+#include <map>
 
 // !!!
 using namespace std;
@@ -268,6 +269,44 @@ public:
     }
 };
 
+using P = pair<int,int>;
+
+// 
+vector<P> route(const vector<vector<char>> &field)
+{
+    int dx8[8] = {1,1,1,0,-1,-1,-1,0}, dy8[8] = {1,0,-1,-1,-1,0,1,1};
+    map<P, P> graph;
+    int tSize = field.size();
+    assert(field[0].size()==tSize);
+    for(int i=-1;i<=tSize;i++)
+    {
+        for(int j=-1;j<=tSize;j++)
+        {
+            if(i!=-1 && i!=tSize && j!=-1 && j!=tSize && field[i][j]!='#') continue;
+            for(int k=0;k<8;k++)
+            {
+                int nx1=i+dx8[k], ny1 = j+dy8[k];
+                int nx2=i+dx8[(k+1)%8], ny2 = j+dy8[(k+1)%8];
+                if(nx1<0 || tSize <= nx1 || ny1 < 0 || tSize <= ny1) continue;
+                if(nx2<0 || tSize <= nx2 || ny2 < 0 || tSize <= ny2) continue;
+                if(field[nx1][ny1]=='#') continue;
+                if(field[nx2][ny2]=='#') continue;
+                P st = P(nx1,ny1), gt = P(nx2,ny2);
+                graph[st] = gt;
+            }
+        }
+    }
+    auto itr = graph.begin();
+    vector<P> ret = {(*itr).first};
+    P cur = (*itr).second;
+    while(cur != ret[0])
+    {
+        assert(graph.find(cur)!=graph.end());
+        ret.emplace_back(cur);
+        cur = graph[cur];
+    }
+    return ret;
+}
 
 int main()
 {
@@ -284,4 +323,5 @@ int main()
         }
         cout << endl;
     }
+    auto r = route(ret);
 }
