@@ -196,77 +196,104 @@ void output_table(const std::vector<std::string>& table) {
   }
 }
 
-void solve(const std::vector<std::string>& table, const Input& in, std::ofstream &fout){
-  auto field = table;
-  int h = field.size(), w = field[0].size();
-  Point stpos = in.point;
-  stpos.x++,stpos.y++;
-  std::swap(stpos.x,stpos.y);
-  field[stpos.x][stpos.y]='+';
-  for(int k = -1; k <= 1; k++){
-    if(field[stpos.x+k][stpos.y+1]=='.') field[stpos.x+k][stpos.y+1]='+';
-  }
-  int len=1;
-  // output_table(field);
-  std::vector<int> p={0,1,2,3};
+class Solver{
+private:
+  std::vector<std::string> field;
+  Point startpos;
+  std::ofstream fout;
+  int h, w;
+  int len; // length of manipulator
   std::random_device seed_gen;
-  std::mt19937 engine(seed_gen());
-  std::vector<int> vx = {1, 0, -1, 0};
-  std::vector<int> vy = {0, 1, 0, -1};
-  std::vector<char> mvc = {'W','D','S','A'};
-  std::vector<std::vector<int>> sf(h, std::vector<int>(w, -1));
-  while(1){
-    std::queue<Point> bfs;
-    std::vector<std::vector<int>> flag(h, std::vector<int>(w, -1));
+  std::mt19937 engine;
+  const std::vector<int> vx = {1, 0, -1, 0};
+  const std::vector<int> vy = {0, 1, 0, -1};
+  const std::vector<char> vc = {'W','D','S','A'};
+  std::vector<int> p={0, 1, 2, 3};
+  
+  std::vector<std::vector<int>> comp;
+  std::vector<std::vector<int>> dir;
+  std::vector<std::string> dest;
+  // std::vector<Point> next;
+  Point next;
+  const int SD = 10;
+
+  void print(std::string s){
+    fout << s;
+  }
+
+  void useB(){
+    len++;
+    fout << "B(" << len+1 << "," << 0 << ")";
+  }
+
+  bool calcComponent(){
     int ma = 1e9;
-    int cid = -1;
-    for(int j = 0; j < w; j++){
-      for(int i = 0; i < h; i++){
-        if(field[i][j]!='#'&&field[i][j]!='+'&&flag[i][j]==-1){
-          bfs.push({i,j});
-          flag[i][j]=i*w+j;
-          int count=0;
+    int ansid = -1;
+    comp = std::vector<std::vector<int>>(h, std::vector<int>(w, -1));
+    std::queue<Point> bfs;
+    for(int i = 0; i < h; i++){
+      for(int j = 0; j < w; j++){
+        if(field[i][j]!='#'&&field[i][j]!='+'&&comp[i][j]==-1){
+          bfs.push({i, j});
+          comp[i][j] = i*w+j;
+          int count = 0;
           while(!bfs.empty()){
             auto now = bfs.front();
             bfs.pop();
             for(int k = 0; k < 4; k++){
               int nx = now.x + vx[k];
               int ny = now.y + vy[k];
-              if(field[nx][ny]!='#'&&field[nx][ny]!='+'&&flag[nx][ny]==-1){
-                flag[nx][ny] = i*w+j;
+              if(field[nx][ny]!='#'&&field[nx][ny]!='+'&&comp[nx][ny]==-1){
+                comp[nx][ny] = i*w+j;
                 bfs.push({nx, ny});
               }
             }
             count++;
           }
           if(ma>count){
-            ma=count;
-            cid=i*w+j;
+            ma = count;
+            ansid = i*w+j;
           }
         }
       }
     }
-    if(ma==1e9) break;
-    auto tf = field;
+    for(int i = 0; i < h; i++){
+      for(int j = 0; j < w; j++){
+        if(comp[i][j]==ansid) comp[i][j]=1;
+        else comp[i][j]=0;
+      }
+    }
+    if(ansid>-1) return true;
+    else return false;
+  }
+
+  void paint(int nowx, int nowy, std::vector<std::string> f){
+      for(int k = -1; k <= 1; k++){
+        if(field[nowx+k][nowy+1]=='.') field[nowx+k][nowy+1] = '+';
+      }
+      for(int k = 1; k <= len; k++){
+        if(field[nowx][nowy+k]=='#') break;
+        if(field[nowx][nowy+k]=='.') field[nowx][nowy+k] = '+';
+      }
+  }
+
+  void calcDestination(){
+    dest = field;
     for(int j = 0; j < w; j++){
       for(int i = 0; i < h; i++){
-        if(tf[i][j]!='#'&&tf[i][j]!='*'&&tf[i][j]!='+'&&flag[i][j]==cid){
-          tf[i][j]='*';
-          for(int k = -1; k <= 1; k++){
-            if(tf[i+k][j+1]=='.') tf[i+k][j+1]='+';
-          }
-          for(int k = 1; k <= len; k++){
-            if(tf[i][j+k]=='#') break;
-            if(tf[i][j+k]=='.') tf[i][j+k]='+';
-          }
+        if(dest[i][j]!='#'&&dest[i][j]!='*'&&dest[i][j]!='+'&&comp[i][j]){
+          paint(i, j, dest);
+          dest[i][j] = '*';
         }
       }
     }
-    std::queue<Point> rec;
-    bfs.push(stpos);
-    rec.push(stpos);
-    sf[stpos.x][stpos.y] = 10;
-    Point next;
+  }
+
+  void calcNext(){
+    std::queue<Point> bfs;
+    bfs.push(startpos);
+    dir = std::vector<std::vector<int>>(h, std::vector<int>(w, -1));
+    dir[startpos.x][startpos.y] = SD;
     while(!bfs.empty()){
       auto now = bfs.front();
       bfs.pop();
@@ -274,80 +301,110 @@ void solve(const std::vector<std::string>& table, const Input& in, std::ofstream
       for(int i = 0; i < 4; i++){
         int nx = now.x + vx[p[i]];
         int ny = now.y + vy[p[i]];
-        if(tf[nx][ny] != '#' && sf[nx][ny] == -1){
-          sf[nx][ny] = p[i];
+        if(field[nx][ny] != '#' && dir[nx][ny] == -1){
+          dir[nx][ny] = p[i];
           bfs.push({nx, ny});
-          rec.push({nx, ny});
-          if(tf[nx][ny] == '*'){
+          if(dest[nx][ny] == '*'){
             next = {nx, ny};
-            goto letsgo;
+            // next.push_back({nx, ny});
+            return;
           }
         }
       }
     }
-    letsgo:;
+  }
+
+  void calcRoute(){
     std::string move="";
     int nx = next.x, ny = next.y;
-    int xx=0;
-    while(sf[nx][ny]!=10){
-      move.push_back(mvc[sf[nx][ny]]);
-      int d = sf[nx][ny];
-      if(field[nx][ny]=='.') field[nx][ny]='+';
-      else if(field[nx][ny]!='+'&&field[nx][ny]!='#'){
-        if(field[nx][ny]=='B'){
-          xx++;
-        }
-        field[nx][ny]='+';
+    int bcount = 0;
+    while(dir[nx][ny] != SD){
+      move.push_back(vc[dir[nx][ny]]);
+      int d = dir[nx][ny];
+      switch(field[nx][ny]){
+      case '+':
+      case '#':
+        break;
+      case 'B':
+        field[nx][ny] = '+';
+        bcount++;
+        break;
+      default:
+        field[nx][ny] = '+';
+        break;
       }
-      for(int k = -1; k <= 1; k++){
-        if(field[nx+k][ny+1]=='.') field[nx+k][ny+1]='+';
-      }
-      for(int k = 1; k <= len; k++){
-        if(field[nx][ny+k]=='#') break;
-        if(field[nx][ny+k]=='.') field[nx][ny+k]='+';
-      }
+      paint(nx, ny, field);
       nx -= vx[d];
       ny -= vy[d];
     }
-    // output_table(field);
     std::reverse(move.begin(), move.end());
-    fout << move;
-    for(int i=0;i<xx;i++){
-      fout << "B(" << len+1 << "," << 0 << ")";
-      len++;
-    }
-    stpos = next;
-    while(!rec.empty()){
-      auto now = rec.front();
-      sf[now.x][now.y] = -1;
-      rec.pop();
+    print(move);
+    for(int i = 0; i < bcount; i++) useB();
+  }
+
+
+public:
+  Solver(const std::vector<std::string>& table, const Input& input, std::string outputfile){
+    field = table;
+    startpos = input.point;
+    startpos.x++;
+    startpos.y++;
+    std::swap(startpos.x, startpos.y);
+    fout = std::ofstream(outputfile);
+    h = field.size();
+    w = field[0].size();
+    engine=std::mt19937(seed_gen());
+    
+    field[startpos.x][startpos.y]='+';
+    for(int k = -1; k <= 1; k++){
+      if(field[startpos.x+k][startpos.y+1]=='.'){
+        field[startpos.x+k][startpos.y+1]='+';
+      }
     }
   }
-  fout << std::endl;
-}
+
+  ~Solver(){
+    fout << std::endl;
+    fout.close();
+  }
+
+  void solve(){
+    std::queue<Point> bfs;
+    while(1){
+      if(!calcComponent()) return;
+      calcDestination();
+      calcNext();
+      calcRoute();
+      startpos = next;
+    }
+    fout << std::endl;
+  }
+
+};
 
 int main() {
 
   for(int i=2;i<=300;i++){
+
     std::string id = std::to_string(i);
     std::string pad = "";
     while(pad.length()+id.length()<3) pad+="0";
     id=pad+id;
     std::string inputfile="problems/prob-"+id+".desc";
     std::string outputfile="solutions/prob-"+id+".sol";
-
     std::cout << inputfile << std::endl;
     std::ifstream fin(inputfile);
-    std::ofstream fout(outputfile);
 
     std::string line;
     std::getline(fin, line);
     const auto input = parse(line);
     auto table = to_table(input);
     // output_table(table);
-    solve(table, input, fout);
+
+    Solver s(table, input, outputfile);
+    s.solve();
+
     fin.close();
-    fout.close();
 
   }
 
