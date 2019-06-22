@@ -17,7 +17,7 @@ end
 __dir__ = File.expand_path("..", __FILE__)
 class Bench
   def initialize
-    @problems = Dir.glob("problems/part-1/*.desc", base: __dir__)
+    @problems = Dir.glob("problems/part-*/*.desc", base: __dir__)
     @problems.map!{|problem| File.join(__dir__,problem) }
 
     best_sol = Dir.glob("best/*.sol__*", base: __dir__)
@@ -27,15 +27,18 @@ class Bench
     }.to_h
 
     @best_dir = File.absolute_path(File.join(__dir__, "best"))
-    pp @best_dir
+  end
+  def tmp_dir prog
+    commit_hash = `git rev-parse HEAD`.chomp[0,8]
+    now = DateTime.now.strftime("%y-%m-%dT%H-%M-%S")
+    result_dir_name = "#{now}__#{commit_hash}__#{File.basename(prog)}"
+    result_dir = File.join(__dir__, "results", result_dir_name)
+    Dir.mkdir(result_dir)
+    result_dir
   end
   def run_all prog
-    commit_hash = `git rev-parse HEAD`.chomp[0,8]
-    now = DateTime.now.iso8601
-    result_dir_name = "#{now}__#{commit_hash}__#{prog}"
-    result_dir = File.join(__dir__, "results", result_dir_name)
+    result_dir = tmp_dir prog
     puts "Output to #{result_dir}"
-    Dir.mkdir(result_dir)
 
     succ = 0
     ng = 0
@@ -69,7 +72,6 @@ class Bench
   end
 
   def verify_all dir
-    p dir
     sols = Dir.glob("*.sol.pre", base:dir)
 
     # Interactive Verifier
@@ -133,13 +135,22 @@ class Bench
     end
   end
 
-  def verify prob, sol, time
+  def verify prob, sol
     cmd = "cd #{__dir__}/verifier && npm run --silent verify #{prob} #{sol}"
     out, err, status = Open3.capture3 cmd
     verify_json out
   end
 
-  def run_verify prob, prog
+  def run_verify prog, prob
+    problem = @problems.find{|f| f.end_with?(prob)}
+    puts "Start #{problem} on #{prog}"
+    result_dir = tmp_dir prog
+    res = run prog, problem, result_dir
+    puts "Exec OK".green
+    if res
+      sol = Dir.glob(File.join(result_dir,"*"))[0]
+      verify problem, sol
+    end
   end
 end
 
@@ -154,6 +165,14 @@ when "verify"
     raise "./bench.rb verify ./2019-06-22T17:31:25+09:00__0dbc30c4__guchoku.o"
   end
   Bench.new.verify_all dir
+when "check"
+  unless prog = ARGV[1]
+    raise "./bench.rb check PROG.a prob-XXX.desc"
+  end
+  unless prob = ARGV[2]
+    raise "./bench.rb check PROG.a prob-XXX.desc"
+  end
+  Bench.new.run_verify prog, prob
 when "genzip"
   Dir.glob("bestzip/*", base:__dir__).each{|f|
     f = File.join(__dir__, f)
@@ -172,5 +191,11 @@ when "genzip"
   FileUtils.remove(zipname)
   `cd #{zipdir}; zip -r #{zipname} ./*.sol`
 else
-  raise "./bench.rb run PROG.a | verify RES_DIR | genzip"
+  puts "
+./bench.rb run {prog.o} : プログラムを実行してディレクトリに吐く
+./bench.rb verify {dir} : ディレクトリの検査をしてbestをアップデートをする
+./bench.rb genzip : bestをzipに固めて bestzip.zipを作る。
+./bench.rb check {prog.o} {prob-XXX.desc} : 単一実行して検査
+ "
+  raise "./bench.rb run | verify | genzip | check"
 end

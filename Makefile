@@ -6,5 +6,5 @@ solver: main.cpp
 clean:
 	-rm solver
 
-solver: clone.cpp
+%.o: %.cpp
 	$(CXX) -o $@ $(CXXFLAGS) $^
