@@ -14,4 +14,6 @@
 - `bestzip.zip` : 提出すべきファイル `./bench genzip`
 
 TODO: 計算量で殴るための並列化
+TODO: 相対パスだとverifyとかが動かない… 適当に書きすぎた…
+TODO: verifier重すぎる。実行時間を求めるのに使うのは現実的ではない。
 
