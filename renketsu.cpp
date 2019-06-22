@@ -200,7 +200,6 @@ class Solver{
 private:
   std::vector<std::string> field;
   Point startpos;
-  std::ofstream fout;
   int h, w;
   int len=1; // length of manipulator
   std::random_device seed_gen;
@@ -219,13 +218,13 @@ private:
   const int SD = 10;
 
   void print(std::string s){
-    fout << s;
+    std::cout << s;
   }
 
   void useB(){
     len++;
     step++;
-    fout << "B(" << len << "," << 0 << ")";
+    std::cout << "B(" << len << "," << 0 << ")";
   }
 
   bool calcComponent(){
@@ -347,13 +346,12 @@ private:
 
 
 public:
-  Solver(const std::vector<std::string>& table, const Input& input, std::string outputfile){
+  Solver(const std::vector<std::string>& table, const Input& input){
     field = table;
     startpos = input.point;
     startpos.x++;
     startpos.y++;
     std::swap(startpos.x, startpos.y);
-    fout = std::ofstream(outputfile);
     h = field.size();
     w = field[0].size();
     engine=std::mt19937(seed_gen());
@@ -367,8 +365,7 @@ public:
   }
 
   ~Solver(){
-    fout << std::endl;
-    fout.close();
+    std::cout << std::endl;
   }
 
   int solve(){
@@ -386,32 +383,30 @@ public:
 
 int main() {
 
-  int lid, rid;
-  std::cin >> lid >> rid;
+  // int lid, rid;
+  // std::cin >> lid >> rid;
 
-  for(int i = lid; i <= rid; i++){
+  // for(int i = lid; i <= rid; i++){
 
-    std::string id = std::to_string(i);
-    std::string pad = "";
-    while(pad.length()+id.length()<3) pad+="0";
-    id=pad+id;
-    std::string inputfile="problems/prob-"+id+".desc";
-    std::string outputfile="solutions/prob-"+id+".sol";
-    std::cout << inputfile << std::endl;
-    std::ifstream fin(inputfile);
+    // std::string id = std::to_string(i);
+    // std::string pad = "";
+    // while(pad.length()+id.length()<3) pad+="0";
+    // id=pad+id;
+    // std::string inputfile="problems/prob-"+id+".desc";
+    // std::string outputfile="solutions/prob-"+id+".sol";
+    // std::cout << inputfile << std::endl;
+    // std::ifstream fin(inputfile);
 
     std::string line;
-    std::getline(fin, line);
+    std::getline(std::cin, line);
     const auto input = parse(line);
     auto table = to_table(input);
     // output_table(table);
 
-    Solver s(table, input, outputfile);
-    std::cout << s.solve() << std::endl;
+    Solver s(table, input);
+    s.solve();
 
-    fin.close();
-
-  }
-
+    // fin.close();
+  //}
   return 0;
 }
