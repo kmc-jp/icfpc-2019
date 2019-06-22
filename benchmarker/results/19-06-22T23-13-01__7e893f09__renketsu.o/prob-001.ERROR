@@ -1,0 +1,2 @@
+Assertion failed: (false), function parse_booster_code, file renketsu.cpp, line 88.
+sh: line 1:  5177 Abort trap: 6           ./renketsu.o < /Users/admin/Documents/icfpc-2019/benchmarker/problems/part-1/prob-001.desc
