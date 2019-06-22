@@ -197,18 +197,18 @@ when "check"
   Bench.new.run_verify prog, prob
 when "genzip"
   Dir.glob("bestzip/*", base:__dir__).each{|f|
-    f = File.join(__dir__, f)
+    f = to_rel(File.join(__dir__, f))
     puts "Remove #{f}"
     FileUtils.remove(f)
   }
   Dir.glob("best/*sol__*", base:__dir__).each{|f|
-    to = File.join(__dir__, "bestzip", File.basename(f.match(/(.+\.sol)__.+/)[1]))
-    f = File.join(__dir__, f)
+    to = to_rel(File.join(__dir__, "bestzip", File.basename(f.match(/(.+\.sol)__.+/)[1])))
+    f = to_rel(File.join(__dir__, f))
     puts "Add #{f}\n-> #{to}"
     FileUtils.copy(f, to)
   }
-  zipdir = File.join(__dir__, "bestzip")
-  zipname = File.join(__dir__, "bestzip.zip")
+  zipdir = to_rel(File.join(__dir__, "bestzip"))
+  zipname = to_rel(File.join(__dir__, "bestzip.zip"))
   puts "Generate zip #{zipdir} --> #{zipname}"
   FileUtils.remove(zipname) if File.exist?(zipname)
   `cd #{zipdir}; zip -r #{zipname} ./*.sol`
