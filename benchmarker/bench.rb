@@ -20,7 +20,7 @@ end
 
 __dir__ = File.expand_path("..", __FILE__)
 def to_rel path
-  Pathname.new(path).relative_path_from(Dir.pwd)
+  Pathname.new(path).relative_path_from(Pathname.new(Dir.pwd))
 end
 class Bench
   def initialize
@@ -61,7 +61,8 @@ class Bench
   end
   def run prog, problem, result_dir
     problem_name = File.basename(problem, ".desc")
-    out, err, status = Open3.capture3 "./#{prog} < #{to_rel(problem)}"
+    puts "ECEC  ./#{prog} < #{to_rel(problem)}"
+    out, err, status = Open3.capture3 "#{prog} < #{to_rel(problem)}"
     print err
     if status != 0
       puts "Error status: #{status}".red
