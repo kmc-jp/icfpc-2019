@@ -210,13 +210,15 @@ private:
   const std::vector<char> vc = {'W','D','S','A'};
   std::vector<int> p={0, 1, 2, 3};
   int step = 0;
-  
+  int ccc=0;
+
   std::vector<std::vector<int>> comp;
   std::vector<std::vector<int>> dir;
   std::vector<std::string> dest;
   std::set<std::pair<int,int>> xpos;
   Point next;
   const int SD = 10;
+  int renketu = 0;
 
   struct robot{
     Point pos;
@@ -261,6 +263,7 @@ private:
           }
           if(ma>count){
             ma = count;
+            renketu = count;
             ansid = i*w+j;
           }
         }
@@ -312,6 +315,10 @@ private:
     bfs.push(startpos);
     dir = std::vector<std::vector<int>>(h, std::vector<int>(w, -1));
     dir[startpos.x][startpos.y] = SD;
+    Point nxt = {-1, -1};
+    const int limit = h*w/6;
+    const int th = 20;
+    int tm = 100000000;
     while(!bfs.empty()){
       auto now = bfs.front();
       bfs.pop();
@@ -323,18 +330,27 @@ private:
           dir[nx][ny] = p[i];
           bfs.push({nx, ny});
           if(dest[nx][ny] == '*' && bot[botid].mask[nx][ny]==1){
-            next = {nx, ny};
-            return;
+            if(nxt.x == -1){
+              nxt = {nx, ny};
+              if(ccc==0||renketu<=th){
+                next = nxt;
+                return;
+              }
+              tm = limit;
+            }
+          }else if(field[nx][ny]=='C'){
+            nxt = {nx, ny};
           }else if(bot[botid].cl > 0){
             if(xpos.find({nx,ny})!=xpos.end()){
-              next = {nx, ny};
-              return;
+              nxt = {nx, ny};
             }
           }
         }
       }
+      tm--;
+      if(tm==0) break;
     }
-    next = {-1, -1};
+    next = nxt;
     return;
   }
 
@@ -477,6 +493,7 @@ private:
         divideMask(one, two, bot[botid].mask, bot[bot.size()-1].mask);
       }
       bot[botid].cl=0;
+      ccc--;
       return true;
     }
     return false;
@@ -498,6 +515,8 @@ public:
       for(int j = 0; j < w; j++){
         if(field[i][j]=='X'){
           xpos.insert({i, j});
+        }else if(field[i][j]=='C'){
+          ccc++;
         }
       }
     }

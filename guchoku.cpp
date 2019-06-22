@@ -6,6 +6,7 @@
 #include <vector>
 #include <queue>
 #include <algorithm>
+#include <random>
 
 struct Point {
   int x, y;
@@ -17,6 +18,7 @@ enum class BoosterCode {
   L,
   R,
   X,
+  C,
 };
 
 struct Booster {
@@ -81,6 +83,7 @@ BoosterCode parse_booster_code(const std::string& line, const std::size_t i) {
     case 'L': return BoosterCode::L;
     case 'R': return BoosterCode::R;
     case 'X': return BoosterCode::X;
+    case 'C': return BoosterCode::C;
     default: assert(false);
   }
   return BoosterCode::X;
@@ -179,6 +182,7 @@ std::vector<std::string> to_table(const Input& input) {
       case BoosterCode::L: code = 'L'; break;
       case BoosterCode::R: code = 'R'; break;
       case BoosterCode::X: code = 'X'; break;
+      case BoosterCode::C: code = 'C'; break;
       default:;
     }
     table[booster.point.y+1][booster.point.x+1] = code;
@@ -198,40 +202,61 @@ void solve(const std::vector<std::string>& table, const Input& in){
   Point stpos = in.point;
   stpos.x++,stpos.y++;
   std::swap(stpos.x,stpos.y);
-  int remain = 0;
-  for(int j = 0; j < w; j++){
-    for(int i = 0; i < h; i++){
-      if(field[i][j]!='#'&&field[i][j]!='.'&&field[i][j]!='*'&&field[i][j]!='+'){
-        field[i][j]='*';
-        remain++;
-        for(int k = -1; k <= 1; k++){
-          if(field[i+k][j+1]=='.') field[i+k][j+1]='+';
-        }
-      }
-    }
-  }
   field[stpos.x][stpos.y]='+';
   for(int k = -1; k <= 1; k++){
     if(field[stpos.x+k][stpos.y+1]=='.') field[stpos.x+k][stpos.y+1]='+';
   }
-  for(int j = 0; j < w; j++){
-    for(int i = 0; i < h; i++){
-      if(field[i][j]=='.'){
-        field[i][j]='*';
-        remain++;
-        for(int k = -1; k <= 1; k++){
-          if(field[i+k][j+1]=='.') field[i+k][j+1]='+';
-        }
-      }
-    }
-  }
   // output_table(field);
+  std::vector<int> p={0,1,2,3};
+  std::random_device seed_gen;
+  std::mt19937 engine(seed_gen());
   std::vector<int> vx = {1, 0, -1, 0};
   std::vector<int> vy = {0, 1, 0, -1};
   std::vector<char> mvc = {'W','D','S','A'};
   std::vector<std::vector<int>> sf(h, std::vector<int>(w, -1));
-  while(remain > 0){
+  while(1){
     std::queue<Point> bfs;
+    std::vector<std::vector<int>> flag(h, std::vector<int>(w, -1));
+    int ma = 1e9;
+    int cid = -1;
+    for(int j = 0; j < w; j++){
+      for(int i = 0; i < h; i++){
+        if(field[i][j]=='.'&&flag[i][j]==-1){
+          bfs.push({i,j});
+          flag[i][j]=i*w+j;
+          int count=0;
+          while(!bfs.empty()){
+            auto now = bfs.front();
+            bfs.pop();
+            for(int k = 0; k < 4; k++){
+              int nx = now.x + vx[k];
+              int ny = now.y + vy[k];
+              if(field[nx][ny]=='.'&&flag[nx][ny]==-1){
+                flag[nx][ny] = i*w+j;
+                bfs.push({nx, ny});
+              }
+            }
+            count++;
+          }
+          if(ma>count){
+            ma=count;
+            cid=i*w+j;
+          }
+        }
+      }
+    }
+    if(ma==1e9) break;
+    auto tf = field;
+    for(int j = 0; j < w; j++){
+      for(int i = 0; i < h; i++){
+        if(tf[i][j]!='#'&&tf[i][j]!='*'&&tf[i][j]!='+'&&flag[i][j]==cid){
+          tf[i][j]='*';
+          for(int k = -1; k <= 1; k++){
+            if(tf[i+k][j+1]=='.') tf[i+k][j+1]='+';
+          }
+        }
+      }
+    }
     std::queue<Point> rec;
     bfs.push(stpos);
     rec.push(stpos);
@@ -240,34 +265,36 @@ void solve(const std::vector<std::string>& table, const Input& in){
     while(!bfs.empty()){
       auto now = bfs.front();
       bfs.pop();
+      std::shuffle(p.begin(), p.end(), engine);
       for(int i = 0; i < 4; i++){
-        int nx = now.x + vx[i];
-        int ny = now.y + vy[i];
-        if(field[nx][ny] != '#' && sf[nx][ny] == -1){
-          sf[nx][ny] = i;
+        int nx = now.x + vx[p[i]];
+        int ny = now.y + vy[p[i]];
+        if(tf[nx][ny] != '#' && sf[nx][ny] == -1){
+          sf[nx][ny] = p[i];
           bfs.push({nx, ny});
           rec.push({nx, ny});
-          if(field[nx][ny] == '*'){
-            field[nx][ny] = '+';
+          if(tf[nx][ny] == '*'){
             next = {nx, ny};
-            remain--;
             goto letsgo;
           }
         }
       }
     }
     letsgo:;
+    field[next.x][next.y] = '+';
     std::string move="";
     int nx = next.x, ny = next.y;
     while(sf[nx][ny]!=10){
       move.push_back(mvc[sf[nx][ny]]);
       int d = sf[nx][ny];
+      if(field[next.x][next.y]=='.') field[next.x][next.y]='+';
+      for(int k = -1; k <= 1; k++){
+        if(field[stpos.x+k][stpos.y+1]=='.') field[stpos.x+k][stpos.y+1]='+';
+      }
       nx -= vx[d];
       ny -= vy[d];
     }
-    // field[next.x][next.y]='o'
     // output_table(field);
-    // field[next.x][next.y]='+';
     std::reverse(move.begin(), move.end());
     std::cout << move;
     stpos = next;
