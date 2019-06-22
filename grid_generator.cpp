@@ -105,7 +105,7 @@ class Generator
     // 必須マス, 禁止マス
     std::vector<Point> iSqs, oSqs;
     int dx[4] = {1, 0, -1, 0}, dy[4] = {0, 1, 0, -1};
-    const string items = "MFDRCX";
+    const string items = "$$$BFLRCX";
     std::vector<int> _nums;
 
 public:
