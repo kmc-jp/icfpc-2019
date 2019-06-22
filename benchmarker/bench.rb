@@ -4,6 +4,7 @@ require 'date'
 require "pp"
 require "json"
 require "fileutils"
+require 'pathname'
 
 class String
   def red; "\e[31m#{self}\e[0m" end
@@ -13,8 +14,14 @@ class String
   def bold; "\e[1m#{self}\e[22m" end
 end
 
+def calctime prog
+  prog.split("#")[0].chars.select{|c|[*'a'..'z']}.size
+end
 
 __dir__ = File.expand_path("..", __FILE__)
+def to_rel path
+  Pathname.new(path).relative_path_from(Pathname.new(Dir.pwd))
+end
 class Bench
   def initialize
     @problems = Dir.glob("problems/part-*/*.desc", base: __dir__)
@@ -54,7 +61,8 @@ class Bench
   end
   def run prog, problem, result_dir
     problem_name = File.basename(problem, ".desc")
-    out, err, status = Open3.capture3 "./#{prog} < #{problem}"
+    puts "ECEC  ./#{prog} < #{to_rel(problem)}"
+    out, err, status = Open3.capture3 "#{prog} < #{to_rel(problem)}"
     print err
     if status != 0
       puts "Error status: #{status}".red
@@ -75,7 +83,11 @@ class Bench
     sols = Dir.glob("*.sol.pre", base:dir)
 
     # Interactive Verifier
-    cmd = "cd #{__dir__}/verifier && npm run --silent verify"
+    if ENV["NO_VERIFY"]=="YES"
+      cmd = "cat" # Dummy program
+    else
+      cmd = "cd #{__dir__}/verifier && npm run --silent verify"
+    end
     Open3.popen2e(cmd){|sin,souterr,wt|
       sin.sync = true
       souterr.sync = true
@@ -85,14 +97,24 @@ class Bench
         prob_name = m[1]
         prob = @problems.find{|x|x.end_with?("#{prob_name}.desc")}
         print "#{i}/#{sols.size} Verify #{sol} on #{prob}..."
+
         sol = File.join(dir, sol)
         json = "{\"desc\":\"#{prob}\",\"sol\":\"#{sol}\"}"
+        soltime_name = sol[0...-4]+"__*"
+        if ! Dir.glob(soltime_name).empty?
+          puts "already verified"
+          next
+        end
 
         # Write Output
-        sin.puts json
-        sin.flush
-        res = souterr.readline
-        time = verify_json res
+        if ENV["NO_VERIFY"]=="YES"
+          time = calctime(File.read(sol))
+        else
+          sin.puts json
+          sin.flush
+          res = souterr.readline
+          time = verify_json res
+        end
 
         if time # Get time or false
           soltime_name = sol[0...-4]+"__#{time}"
@@ -188,14 +210,15 @@ when "genzip"
   zipdir = File.join(__dir__, "bestzip")
   zipname = File.join(__dir__, "bestzip.zip")
   puts "Generate zip #{zipdir} --> #{zipname}"
-  FileUtils.remove(zipname)
+  FileUtils.remove(zipname) if File.exist?(zipname)
   `cd #{zipdir}; zip -r #{zipname} ./*.sol`
 else
   puts "
 ./bench.rb run {prog.o} : プログラムを実行してディレクトリに吐く
 ./bench.rb verify {dir} : ディレクトリの検査をしてbestをアップデートをする
-./bench.rb genzip : bestをzipに固めて bestzip.zipを作る。
-./bench.rb check {prog.o} {prob-XXX.desc} : 単一実行して検査
+NO_VERIFY=YES ./bench.rb verify {dir} : ディレクトリの検査をしてbestをアップデートをする
+./bench.rb genzip : bestをzipに固めて bestzip.zipを作る
+./bench.rb check {prog.o} {prob-XXX.desc} : 単一実行して検査 bestは更新しない (verifyすれば更新される)
  "
   raise "./bench.rb run | verify | genzip | check"
 end
