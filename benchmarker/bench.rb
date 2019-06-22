@@ -85,8 +85,14 @@ class Bench
         prob_name = m[1]
         prob = @problems.find{|x|x.end_with?("#{prob_name}.desc")}
         print "#{i}/#{sols.size} Verify #{sol} on #{prob}..."
+
         sol = File.join(dir, sol)
         json = "{\"desc\":\"#{prob}\",\"sol\":\"#{sol}\"}"
+        soltime_name = sol[0...-4]+"__*"
+        if ! Dir.glob(soltime_name).empty?
+          puts "already verified"
+          next
+        end
 
         # Write Output
         sin.puts json
@@ -188,14 +194,14 @@ when "genzip"
   zipdir = File.join(__dir__, "bestzip")
   zipname = File.join(__dir__, "bestzip.zip")
   puts "Generate zip #{zipdir} --> #{zipname}"
-  FileUtils.remove(zipname)
+  FileUtils.remove(zipname) if File.exist?(zipname)
   `cd #{zipdir}; zip -r #{zipname} ./*.sol`
 else
   puts "
 ./bench.rb run {prog.o} : プログラムを実行してディレクトリに吐く
 ./bench.rb verify {dir} : ディレクトリの検査をしてbestをアップデートをする
-./bench.rb genzip : bestをzipに固めて bestzip.zipを作る。
-./bench.rb check {prog.o} {prob-XXX.desc} : 単一実行して検査
+./bench.rb genzip : bestをzipに固めて bestzip.zipを作る
+./bench.rb check {prog.o} {prob-XXX.desc} : 単一実行して検査 bestは更新しない (verifyすれば更新される)
  "
   raise "./bench.rb run | verify | genzip | check"
 end
