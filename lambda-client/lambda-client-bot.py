@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 import os
 import dotenv
 dotenv_path = os.path.join(os.path.dirname(__file__), '.env')
@@ -27,7 +28,7 @@ def put_coininfo():
   post(res)
 
 import subprocess
-schedule.every(10).minutes.do(put_coininfo)
+schedule.every(5).minutes.do(put_coininfo)
 
 put_coininfo()
 
