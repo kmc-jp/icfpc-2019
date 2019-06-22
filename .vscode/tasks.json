@@ -9,7 +9,7 @@
             "command": "g++",
             "args": [
                 "-std=c++17",
-                "-O2",
+                "-O3",
                 "${relativeFile}",
                 "-o",
                 "${fileDirname}/${fileBasenameNoExtension}.exe"
