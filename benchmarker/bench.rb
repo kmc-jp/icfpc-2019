@@ -4,6 +4,7 @@ require 'date'
 require "pp"
 require "json"
 require "fileutils"
+require 'pathname'
 
 class String
   def red; "\e[31m#{self}\e[0m" end
@@ -18,6 +19,9 @@ def calctime prog
 end
 
 __dir__ = File.expand_path("..", __FILE__)
+def to_rel path
+  Pathname.new(path).relative_path_from(Dir.pwd)
+end
 class Bench
   def initialize
     @problems = Dir.glob("problems/part-*/*.desc", base: __dir__)
@@ -57,7 +61,7 @@ class Bench
   end
   def run prog, problem, result_dir
     problem_name = File.basename(problem, ".desc")
-    out, err, status = Open3.capture3 "./#{prog} < #{problem}"
+    out, err, status = Open3.capture3 "./#{prog} < #{to_rel(problem)}"
     print err
     if status != 0
       puts "Error status: #{status}".red
