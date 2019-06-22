@@ -315,8 +315,8 @@ private:
     dir = std::vector<std::vector<int>>(h, std::vector<int>(w, -1));
     dir[startpos.x][startpos.y] = SD;
     Point nxt = {-1, -1};
-    const int limit = 300;
-    const int th = 20;
+    const int limit = 500;
+    const int th = 50;
     int tm = 100000000;
     while(!bfs.empty()){
       auto now = bfs.front();
