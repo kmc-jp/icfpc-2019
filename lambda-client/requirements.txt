@@ -2,3 +2,6 @@ werkzeug
 json-rpc
 jsonrpc-requests
 cachetools
+schedule
+requests
+python-dotenv
