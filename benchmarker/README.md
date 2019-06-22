@@ -1,5 +1,12 @@
 # benchmaker
 
+```
+./bench.rb run {prog.o} : プログラムを実行してディレクトリに吐く
+./bench.rb verify {dir} : ディレクトリの検査をしてbestをアップデートをする
+./bench.rb genzip : bestをzipに固めて bestzip.zipを作る
+./bench.rb check {prog.o} {prob-XXX.desc} : 単一実行して検査 bestは更新しない (verifyすれば更新される)
+```
+
 - `REDME.md` : これ
 - `bench.rb` : ベンチファイル (Ruby)
 - `problems/` : 問題たち
