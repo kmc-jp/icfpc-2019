@@ -157,13 +157,13 @@ std::vector<std::string> to_table(const Input& input) {
       if (sx < tx) {
         for (int i = y; i < h-1; ++i) {
           for (int j = sx; j < tx; ++j) {
-            table[i][j] = '#';
+            table[i][j]+='#'-'.';
           }
         }
       } else {
         for (int i = y; i < h-1; ++i) {
           for (int j = tx; j < sx; ++j) {
-            table[i][j] = '.';
+            table[i][j]-='#'-'.';
           }
         }
       }
