@@ -1,1 +1,4 @@
-**/solver
+.vscode
+.DS_Store
+solver
+*.o
