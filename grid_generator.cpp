@@ -105,6 +105,7 @@ class Generator
     // 必須マス, 禁止マス
     std::vector<Point> iSqs, oSqs;
     int dx[4] = {1, 0, -1, 0}, dy[4] = {0, 1, 0, -1};
+    int dx8[8] = {1,1,1,0,-1,-1,-1,0}, dy8[8] = {1,0,-1,-1,-1,0,1,1};
     const string items = "$$$BFLRCX";
     std::vector<int> _nums;
 
@@ -113,6 +114,7 @@ public:
     {
         iSqs = is;
         oSqs = os;
+        sort(oSqs.begin(), oSqs.end(), [](Point l, Point r){return l.x!=r.x ? l.x<r.x : l.y < r.y;});
         _nums = nums;
         assert(nums.size() == 9);
         tSize = nums[0];
@@ -134,40 +136,47 @@ public:
         for (auto p : iSqs)
         {
             // cerr << p.x << " " << p.y << endl;
-            ret[p.x - 1][p.y - 1] = '.';
+            ret[p.x][p.y] = '.';
         }
         int corner = 4, cmax = (vMin + vMax) / 2;
         // 禁止マスを # に
+
         for (auto p : oSqs)
         {
-            ret[p.x - 1][p.y - 1] = '#';
+            //if(p.x==20) cerr << p.x << " "<<p.y << endl;
+            ret[p.x][p.y] = '#';
             // 右か左の端に繋げる
             bool l = true, r = true;
             for (int j = 0; j < tSize; j++)
             {
-                if (ret[p.x - 1][j] != '.')
+                if (ret[p.x][j] != '.')
                     continue;
-                if (j < p.y - 1)
+                if (j < p.y)
                     l = false;
-                else
+                else if(p.y<j)
                     r = false;
             }
             assert(l || r);
             if (l)
             {
-                for (int j = p.y - 1; j >= 0; j--)
+                for (int j = p.y; j >= 0; j--)
                 {
-                    ret[p.x - 1][j] = '#';
-                    if (p.x - 1 > 1 && ret[p.x - 2][j] == '#')
+                    if(p.x == 20)
+                    {
+                        // cerr << p.x << " "<< j << endl;
+                        cerr << ret[p.x-1][j] << endl;
+                    }
+                    ret[p.x][j] = '#';
+                    if (p.x > 0 && ret[p.x - 1][j] == '#')
                         break;
                 }
             }
             else
             {
-                for (int j = tSize - 1; j >= p.y - 1; j--)
+                for (int j = p.y; j < tSize; j++)
                 {
-                    ret[p.x - 1][j] = '#';
-                    if (p.x - 1 > 1 && ret[p.x - 2][j] == '#')
+                    ret[p.x][j] = '#';
+                    if (p.x > 0 && ret[p.x - 1][j] == '#')
                         break;
                 }
             }
@@ -178,16 +187,25 @@ public:
         {
             for (int j = 0; j < tSize; j++)
             {
-                if (0 < i && i < tSize - 1 && 0 < j && j < tSize - 1)
-                    continue;
+                if(0<i && i<tSize-1 && 0<j && j<tSize-1) continue;
                 if (corner > cmax)
                     break;
-                if ((i + j) % 2)
-                    continue;
                 if (ret[i][j] != '*')
                     continue;
-                ret[i][j] = '#';
-                corner += 2;
+                if ((i + j) % 2)
+                    continue;
+                bool f = true;
+                for(int k=0;k<8;k++)
+                {
+                    int nx = i + dx8[k], ny = j + dy8[k];
+                    if(nx<0 || tSize <= nx || ny < 0 || tSize <= ny) continue;
+                    if(ret[nx][ny]=='#') f = false;
+                }
+                if(f)
+                {
+                    ret[i][j] = '#';
+                    corner += 2;
+                }
             }
         }
         // 空いてるマスにアイテムを置く
