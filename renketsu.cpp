@@ -202,7 +202,7 @@ private:
   Point startpos;
   std::ofstream fout;
   int h, w;
-  int len; // length of manipulator
+  int len=1; // length of manipulator
   std::random_device seed_gen;
   std::mt19937 engine;
   const std::vector<int> vx = {1, 0, -1, 0};
@@ -223,7 +223,7 @@ private:
 
   void useB(){
     len++;
-    fout << "B(" << len+1 << "," << 0 << ")";
+    fout << "B(" << len << "," << 0 << ")";
   }
 
   bool calcComponent(){
@@ -267,14 +267,14 @@ private:
     else return false;
   }
 
-  void paint(int nowx, int nowy, std::vector<std::string> f){
-      for(int k = -1; k <= 1; k++){
-        if(field[nowx+k][nowy+1]=='.') field[nowx+k][nowy+1] = '+';
-      }
-      for(int k = 1; k <= len; k++){
-        if(field[nowx][nowy+k]=='#') break;
-        if(field[nowx][nowy+k]=='.') field[nowx][nowy+k] = '+';
-      }
+  void paint(int nowx, int nowy, std::vector<std::string> &f){
+    for(int k = -1; k <= 1; k++){
+      if(f[nowx+k][nowy+1]=='.') f[nowx+k][nowy+1] = '+';
+    }
+    for(int k = 1; k <= len; k++){
+      if(f[nowx][nowy+k]=='#') break;
+      if(f[nowx][nowy+k]=='.') f[nowx][nowy+k] = '+';
+    }
   }
 
   void calcDestination(){
@@ -377,14 +377,16 @@ public:
       calcRoute();
       startpos = next;
     }
-    fout << std::endl;
   }
 
 };
 
 int main() {
 
-  for(int i=2;i<=300;i++){
+  int lid, rid;
+  std::cin >> lid >> rid;
+
+  for(int i = lid; i <= rid; i++){
 
     std::string id = std::to_string(i);
     std::string pad = "";
