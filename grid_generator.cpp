@@ -221,6 +221,16 @@ public:
             }
         }
         // othello
+        for(int j=0;j<tSize;j++)
+        {
+            assert(ret[0][j]!='.');
+            if(ret[1][j]=='#') ret[0][j] = '#';
+        }
+        for(int j=0;j<tSize;j++)
+        {
+            assert(ret[tSize-1][j]!='.');
+            if(ret[tSize-2][j]=='#') ret[tSize-1][j] = '#';
+        }
         for(int i=1;i<tSize-1;i++)
         {
             for(int j=0;j<tSize;j++)
@@ -257,6 +267,7 @@ public:
         return ret;
     }
 };
+
 
 int main()
 {
