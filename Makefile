@@ -5,3 +5,6 @@ solver: main.cpp
 
 clean:
 	-rm solver
+
+%.o: %.cpp
+	$(CXX) -o $@ $(CXXFLAGS) $^
