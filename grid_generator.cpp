@@ -106,10 +106,14 @@ class Generator
     std::vector<Point> iSqs, oSqs;
     int dx[4] = {1, 0, -1, 0}, dy[4] = {0, 1, 0, -1};
     const string items = "MFDRCX";
+    std::vector<int> _nums;
 
 public:
-    Generator(const vector<int> &nums)
+    Generator(const vector<int> &nums, std::vector<Point> &is, std::vector<Point> &os)
     {
+        iSqs = is;
+        oSqs = os;
+        _nums = nums;
         assert(nums.size() == 9);
         tSize = nums[0];
         vMin = nums[1];
@@ -129,17 +133,70 @@ public:
         // 必須マスを . に
         for (auto p : iSqs)
         {
+            // cerr << p.x << " " << p.y << endl;
             ret[p.x - 1][p.y - 1] = '.';
         }
+        int corner = 4, cmax = (vMin + vMax) / 2;
         // 禁止マスを # に
         for (auto p : oSqs)
         {
             ret[p.x - 1][p.y - 1] = '#';
+            // 右か左の端に繋げる
+            bool l = true, r = true;
+            for (int j = 0; j < tSize; j++)
+            {
+                if (ret[p.x - 1][j] != '.')
+                    continue;
+                if (j < p.y - 1)
+                    l = false;
+                else
+                    r = false;
+            }
+            assert(l || r);
+            if (l)
+            {
+                for (int j = p.y - 1; j >= 0; j--)
+                {
+                    ret[p.x - 1][j] = '#';
+                    if (p.x - 1 > 1 && ret[p.x - 2][j] == '#')
+                        break;
+                }
+            }
+            else
+            {
+                for (int j = tSize - 1; j >= p.y - 1; j--)
+                {
+                    ret[p.x - 1][j] = '#';
+                    if (p.x - 1 > 1 && ret[p.x - 2][j] == '#')
+                        break;
+                }
+            }
+            corner += 2; // 怪しい
         }
-        
+        // 角の個数を調整
+        for (int i = 0; i < tSize; i++)
+        {
+            for (int j = 0; j < tSize; j++)
+            {
+                if (0 < i && i < tSize - 1 && 0 < j && j < tSize - 1)
+                    continue;
+                if (corner > cmax)
+                    break;
+                if ((i + j) % 2)
+                    continue;
+                if (ret[i][j] != '*')
+                    continue;
+                ret[i][j] = '#';
+                corner += 2;
+            }
+        }
         // 空いてるマスにアイテムを置く
         int index = 3;
-        assert(nums[index] != 0);
+        assert(_nums[index] != 0);
+        for (int i = 0; i < tSize; i++)
+            for (int j = 0; j < tSize; j++)
+                if (ret[i][j] == '*')
+                    ret[i][j] = '.';
         for (int i = 0; i < tSize; i++)
         {
             for (int j = 0; j < tSize; j++)
@@ -149,11 +206,12 @@ public:
                 if (ret[i][j] != '.')
                     continue;
                 ret[i][j] = items[index];
-                nums[index]--;
-                if (nums[index] == 0)
+                _nums[index]--;
+                if (_nums[index] == 0)
                     index++;
             }
         }
+        assert(index == 9);
         return ret;
     }
 };
@@ -163,6 +221,14 @@ int main()
     string puzzle;
     cin >> puzzle;
     PuzzleParser parser(puzzle);
-    Generator gen(parser.nums);
+    Generator gen(parser.nums, parser.iSqs, parser.oSqs);
     auto ret = gen.generate();
+    for (auto v : ret)
+    {
+        for (auto c : v)
+        {
+            cout << c;
+        }
+        cout << endl;
+    }
 }
