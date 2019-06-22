@@ -224,6 +224,7 @@ private:
     int cl;
     std::queue<char> task;
     std::string sol;
+    std::vector<std::vector<int>> mask;
   };
   std::vector<robot> bot;
 
@@ -234,14 +235,14 @@ private:
     bot[botid].sol.push_back(c);
   }
 
-  bool calcComponent(){
+  bool calcComponent(int botid){
     int ma = 1e9;
     int ansid = -1;
     comp = std::vector<std::vector<int>>(h, std::vector<int>(w, -1));
     std::queue<Point> bfs;
     for(int i = 0; i < h; i++){
       for(int j = 0; j < w; j++){
-        if(field[i][j]!='#'&&field[i][j]!='+'&&comp[i][j]==-1){
+        if(field[i][j]!='#'&&field[i][j]!='+'&&comp[i][j]==-1&&bot[botid].mask[i][j]){
           bfs.push({i, j});
           comp[i][j] = i*w+j;
           int count = 0;
@@ -251,7 +252,7 @@ private:
             for(int k = 0; k < 4; k++){
               int nx = now.x + vx[k];
               int ny = now.y + vy[k];
-              if(field[nx][ny]!='#'&&field[nx][ny]!='+'&&comp[nx][ny]==-1){
+              if(field[nx][ny]!='#'&&field[nx][ny]!='+'&&comp[nx][ny]==-1&&bot[botid].mask[nx][ny]){
                 comp[nx][ny] = i*w+j;
                 bfs.push({nx, ny});
               }
@@ -273,6 +274,14 @@ private:
     }
     if(ansid>-1) return true;
     else return false;
+  }
+
+  void resetMask(int botid){
+    for(int x = 0; x < h; x++){
+      for(int y = 0; y < w; y++){
+        bot[botid].mask[x][y]=(field[x][y]!='#'&&field[x][y]!='+'?1:0);
+      }
+    }
   }
 
   void paint(int botid, int nowx, int nowy, std::vector<std::string> &f){
@@ -313,7 +322,7 @@ private:
         if(field[nx][ny] != '#' && dir[nx][ny] == -1){
           dir[nx][ny] = p[i];
           bfs.push({nx, ny});
-          if(dest[nx][ny] == '*'){
+          if(dest[nx][ny] == '*' && bot[botid].mask[nx][ny]==1){
             next = {nx, ny};
             return;
           }else if(bot[botid].cl > 0){
@@ -325,6 +334,8 @@ private:
         }
       }
     }
+    next = {-1, -1};
+    return;
   }
 
   void calcRoute(int botid){
@@ -351,7 +362,7 @@ private:
         break;
       }
       paint(botid, nx, ny, field);
-      output_table(field);
+      // output_table(field);
       nx -= vx[d];
       ny -= vy[d];
     }
@@ -372,6 +383,80 @@ private:
     bcount = 0;
   }
 
+  
+  Point distantPoint(Point p, std::vector<std::vector<int>> &mask){
+    std::queue<Point> bfs;
+    std::vector<std::vector<int>> dist = std::vector<std::vector<int>>(h, std::vector<int>(w, -1));
+    dist[p.x][p.y] = 0;
+    bfs.push({p.x, p.y});
+    Point q;
+    while(!bfs.empty()){
+      auto now = bfs.front();
+      bfs.pop();
+      for(int i = 0; i < 4; i++){
+        int nx = now.x + vx[i];
+        int ny = now.y + vy[i];
+        if(field[nx][ny]!='#'&&dist[nx][ny]==-1){
+          dist[nx][ny] = dist[now.x][now.y]+1;
+          bfs.push({nx, ny});
+        }
+      }
+      if(mask[now.x][now.y]==1) q = now;
+    }
+    return q;
+  }
+
+  void divideMask(Point a, Point b, std::vector<std::vector<int>> &mask, std::vector<std::vector<int>> &newmask){
+    std::queue<Point> bfs;
+    std::vector<std::vector<int>> color = std::vector<std::vector<int>>(h, std::vector<int>(w, -1));
+    color[a.x][a.y] = 0;
+    color[b.x][b.y] = 1;
+    bfs.push({a.x, a.y});
+    bfs.push({b.x, b.y});
+    while(!bfs.empty()){
+      auto now = bfs.front();
+      bfs.pop();
+      for(int i = 0; i < 4; i++){
+        int nx = now.x + vx[i];
+        int ny = now.y + vy[i];
+        if(field[nx][ny]!='#'&&color[nx][ny]==-1){
+          color[nx][ny] = color[now.x][now.y];
+          bfs.push({nx, ny});
+        }
+      }
+    }
+    
+    for(int i = 0; i < h; i++){
+      for(int j = 0; j < w; j++){
+        if(mask[i][j]){
+          if(color[i][j]){
+            mask[i][j]=1;
+            newmask[i][j]=0;
+          }else{
+            mask[i][j]=0;
+            newmask[i][j]=1;
+          }
+        }
+      }
+    }
+    
+        // for(int x = h-1;x>=0;x--){
+        //   for(int y =0;y<w;y++){
+        //     std::cout << mask[x][y];
+        //   }
+        //   std::cout << std::endl;
+        // }
+        // std::cout << std::endl;
+        // for(int x = h-1;x>=0;x--){
+        //   for(int y =0;y<w;y++){
+        //     std::cout << newmask[x][y];
+        //   }
+        //   std::cout << std::endl;
+        // }
+        // std::cout << std::endl;
+    return;
+  }
+
   bool useItem(int botid, char c){
     switch(c){
     case 'B':
@@ -381,7 +466,15 @@ private:
     case 'C':
       print(botid, "C");
       for(int i=0;i<bot[botid].cl;i++){
-        bot.push_back({bot[botid].pos, 1, 0, std::queue<char>()});
+        for(int x = 0; x < h; x++){
+          for(int y = 0; y < w; y++){
+            bot[botid].mask[x][y]=bot[botid].mask[x][y]*(field[x][y]!='#'&&field[x][y]!='+'?1:0);
+          }
+        }
+        Point one = distantPoint({bot[botid].pos.x, bot[botid].pos.y}, bot[botid].mask);
+        Point two = distantPoint(one, bot[botid].mask);
+        bot.push_back({bot[botid].pos, 1, 0, std::queue<char>(), "", std::vector<std::vector<int>>(h, std::vector<int>(w, 0))});
+        divideMask(one, two, bot[botid].mask, bot[bot.size()-1].mask);
       }
       bot[botid].cl=0;
       return true;
@@ -414,7 +507,7 @@ public:
         field[startpos.x+k][startpos.y+1]='+';
       }
     }
-    bot = std::vector<robot>(1, {startpos, 1, 0, std::queue<char>()});
+    bot.push_back({startpos, 1, 0, std::queue<char>(), "", std::vector<std::vector<int>>(h, std::vector<int>(w, 1))});
   }
 
   ~Solver(){
@@ -427,16 +520,29 @@ public:
       int sz = bot.size();
       for(int i = 0; i < bot.size(); i++){
         if(!bot[i].task.empty()) continue;
-        if(!calcComponent()) goto end;
+        if(!calcComponent(i)){
+          resetMask(i);
+          if(!calcComponent(i)){
+            goto end;
+          }
+        }
         calcDestination(i);
         calcNext(i);
         calcRoute(i);
       }
       for(int i = 0; i < sz; i++){
+        // for(int x = h-1;x>=0;x--){
+        //   for(int y =0;y<w;y++){
+        //     std::cout << bot[i].mask[x][y];
+        //   }
+        //   std::cout << std::endl;
+        // }
+        // std::cout << std::endl;
         bool wt = useItem(i, bot[i].task.front());
         if(!wt) print(i, bot[i].task.front());
         bot[i].task.pop();
       }
+      // output_table(field);
       step++;
     }
     end:;
