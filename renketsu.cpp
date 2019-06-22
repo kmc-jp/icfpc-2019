@@ -209,6 +209,7 @@ private:
   const std::vector<int> vy = {0, 1, 0, -1};
   const std::vector<char> vc = {'W','D','S','A'};
   std::vector<int> p={0, 1, 2, 3};
+  int step = 0;
   
   std::vector<std::vector<int>> comp;
   std::vector<std::vector<int>> dir;
@@ -223,6 +224,7 @@ private:
 
   void useB(){
     len++;
+    step++;
     fout << "B(" << len << "," << 0 << ")";
   }
 
@@ -336,6 +338,7 @@ private:
       paint(nx, ny, field);
       nx -= vx[d];
       ny -= vy[d];
+      step++;
     }
     std::reverse(move.begin(), move.end());
     print(move);
@@ -368,15 +371,15 @@ public:
     fout.close();
   }
 
-  void solve(){
-    std::queue<Point> bfs;
+  int solve(){
     while(1){
-      if(!calcComponent()) return;
+      if(!calcComponent()) return step;
       calcDestination();
       calcNext();
       calcRoute();
       startpos = next;
     }
+    return 0;
   }
 
 };
@@ -404,7 +407,7 @@ int main() {
     // output_table(table);
 
     Solver s(table, input, outputfile);
-    s.solve();
+    std::cout << s.solve() << std::endl;
 
     fin.close();
 
