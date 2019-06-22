@@ -13,6 +13,9 @@ class String
   def bold; "\e[1m#{self}\e[22m" end
 end
 
+def calctime prog
+  prog.split("#")[0].chars.select{|c|[*'a'..'z']}.size
+end
 
 __dir__ = File.expand_path("..", __FILE__)
 class Bench
@@ -95,10 +98,14 @@ class Bench
         end
 
         # Write Output
-        sin.puts json
-        sin.flush
-        res = souterr.readline
-        time = verify_json res
+        if ENV["NO_VERIFY"]=="YES"
+          time = calctime(File.read(sol))
+        else
+          sin.puts json
+          sin.flush
+          res = souterr.readline
+          time = verify_json res
+        end
 
         if time # Get time or false
           soltime_name = sol[0...-4]+"__#{time}"
@@ -200,6 +207,7 @@ else
   puts "
 ./bench.rb run {prog.o} : プログラムを実行してディレクトリに吐く
 ./bench.rb verify {dir} : ディレクトリの検査をしてbestをアップデートをする
+NO_VERIFY=YES ./bench.rb verify {dir} : ディレクトリの検査をしてbestをアップデートをする
 ./bench.rb genzip : bestをzipに固めて bestzip.zipを作る
 ./bench.rb check {prog.o} {prob-XXX.desc} : 単一実行して検査 bestは更新しない (verifyすれば更新される)
  "
