@@ -437,6 +437,7 @@ private:
       case 'C':
         field[nx][ny] = '+';
         bot[botid].cl++;
+        break;
       case 'X':
       default:
         field[nx][ny] = '+';
@@ -470,7 +471,7 @@ private:
     std::vector<std::vector<int>> dist = std::vector<std::vector<int>>(h, std::vector<int>(w, -1));
     dist[p.x][p.y] = 0;
     bfs.push({p.x, p.y});
-    Point q;
+    Point q = {-1, -1};
     while(!bfs.empty()){
       auto now = bfs.front();
       bfs.pop();
@@ -494,7 +495,9 @@ private:
       }
     }
     Point one = distantPoint({bot[botidp].pos.x, bot[botidp].pos.y}, bot[botidp].mask);
+    if(one.x==-1) return;
     Point two = distantPoint(one, bot[botidp].mask);
+    if(two.x==-1) return;
     divideMask(one, two, botidp, botidc);
   }
 
@@ -591,7 +594,6 @@ public:
     while(1){
       int sz = bot.size();
       int kk = updateCharge();
-      // std::cout << step << " " << sz << " " << kk << std::endl;
       if(kk == 0) goto end;
       for(int i = 0; i < bot.size(); i++){
         if(bot[i].sol.length() > bot[i].solidx) continue;
@@ -698,7 +700,7 @@ int main() {
   const auto input = parse(line);
   auto table = to_table(input);
 
-  const int tries = 5;
+  const int tries = 3;
   int minstep = 1000000000;
   std::string ans;
   

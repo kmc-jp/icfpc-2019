@@ -468,7 +468,7 @@ private:
     std::vector<std::vector<int>> dist = std::vector<std::vector<int>>(h, std::vector<int>(w, -1));
     dist[p.x][p.y] = 0;
     bfs.push({p.x, p.y});
-    Point q;
+    Point q = {-1, -1};
     while(!bfs.empty()){
       auto now = bfs.front();
       bfs.pop();
@@ -492,7 +492,9 @@ private:
       }
     }
     Point one = distantPoint({bot[botidp].pos.x, bot[botidp].pos.y}, bot[botidp].mask);
+    if(one.x == -1) return;
     Point two = distantPoint(one, bot[botidp].mask);
+    if(two.x == -1) return;
     divideMask(one, two, botidp, botidc);
   }
 
@@ -684,7 +686,7 @@ int main() {
     const auto input = parse(line);
     auto table = to_table(input);
     // output_table(table);
-
+    
     Solver s(table, input);
     // std::cout << s.solve() << std::endl;
     s.solve();
