@@ -339,8 +339,8 @@ private:
           bfs.push({nx, ny});
           if(dest[nx][ny] == '*'){
             if(tm>limit) tm = limit;
-            if(cost > dist[nx][ny]*dist[nx][ny]*sqrt(comp[nx][ny])){
-              cost = dist[nx][ny]*dist[nx][ny]*sqrt(comp[nx][ny]);
+            if(cost > (long long)dist[nx][ny]*dist[nx][ny]*dist[nx][ny]*comp[nx][ny]){
+              cost = (long long)dist[nx][ny]*dist[nx][ny]*dist[nx][ny]*comp[nx][ny];
               nxt = {nx, ny};
             }
           }
