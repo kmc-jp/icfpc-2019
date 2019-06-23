@@ -10,6 +10,13 @@
 #include <fstream>
 #include <utility>
 
+unsigned long xor128() {
+  static unsigned long x=15121123, y=36125985, z=512224629, w=881259873;
+  unsigned long t=(x^(x<<11));
+  x=y; y=z; z=w;
+  return ( w=(w^(w>>19))^(t^(t>>8)) );
+}
+
 struct Point {
   int x, y;
 };
@@ -116,7 +123,7 @@ Input parse(const std::string& line) {
   assert(line[index2] == '#');
   const auto [obstacles, index3] = parse_obstacles(line, index2+1);
   assert(line[index3] == '#');
-  const auto boosters = parse_boosters(line, index3+1);
+  const auto boosters = (line[index3]!='#'?parse_boosters(line, index3+1):std::vector<Booster>());
   return Input { map, point, obstacles, boosters };
 }
 
@@ -218,6 +225,7 @@ private:
   Point next;
   const int SD = 10;
   int renketu = 0;
+  int aaa,bbb;
 
   struct robot{
     Point pos;
@@ -315,8 +323,8 @@ private:
     dir = std::vector<std::vector<int>>(h, std::vector<int>(w, -1));
     dir[startpos.x][startpos.y] = SD;
     Point nxt = {-1, -1};
-    const int limit = 5000;
-    const int th = 30;
+    const int limit = aaa;
+    const int th = bbb;
     int tm = 100000000;
     while(!bfs.empty()){
       auto now = bfs.front();
@@ -508,6 +516,8 @@ public:
     h = field.size();
     w = field[0].size();
     engine=std::mt19937(seed_gen());
+    aaa = xor128()%h*w+1;
+    bbb = xor128()%(h*w/50)+1;
     xpos = std::set<std::pair<int,int>>();
     for(int i = 0; i < h; i++){
       for(int j = 0; j < w; j++){
