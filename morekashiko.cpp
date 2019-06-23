@@ -260,9 +260,7 @@ private:
         }
       }
       c+=bot[i].chargesize;
-      // std::cout << bot[i].chargesize << " ";
     }
-    // std::cout << std::endl;
     return c;
   }
 
@@ -546,6 +544,7 @@ public:
   }
 
   int solve(){
+    int x=0;
     while(1){
       int sz = bot.size();
       int kk = updateCharge();
@@ -567,6 +566,10 @@ public:
             continue;
           }else{
             assign(maid, i);
+            if(bot[i].chargesize==0){
+              print(i, 'Z');
+              continue;
+            }
             calcComponent(i);
           }
         }else{
@@ -576,7 +579,6 @@ public:
         calcNext(i);
         calcRoute(i);
       }
-        // std::cout << "ok" << std::endl;
       for(int i = 0; i < sz; i++){
         doMove(i, bot[i].sol[bot[i].solidx]);
       }
@@ -591,7 +593,7 @@ public:
       bool endflag = true;
       int sz = bot.size();
       for(int i = 0; i < bot.size(); i++){
-        if(end[i] > bot[i].solidx) endflag=false;
+        if(bot[i].sol.length() > bot[i].solidx) endflag=false;
       }
       if(endflag) break;
       for(int i = 0; i < sz; i++){
@@ -599,6 +601,7 @@ public:
           doMove(i, bot[i].sol[bot[i].solidx]);
         }else{
           print(i, 'Z');
+          bot[i].solidx++;
         }
       }
       step++;
