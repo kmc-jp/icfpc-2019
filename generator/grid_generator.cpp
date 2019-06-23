@@ -109,6 +109,7 @@ class Generator
     int dx8[8] = {1,1,1,0,-1,-1,-1,0}, dy8[8] = {1,0,-1,-1,-1,0,1,1};
     const string items = "$$$BFLRCX";
     std::vector<int> _nums;
+    vector<vector<char>> _ret;
 
 public:
     Generator(const vector<int> &nums, std::vector<Point> &is, std::vector<Point> &os)
@@ -129,7 +130,45 @@ public:
         xNum = nums[8];
     }
 
-    vector<vector<char>> generate()
+    using P = pair<int,int>;
+
+    vector<P> route(const vector<vector<char>> &field)
+    {
+        int dx8[8] = {1,1,1,0,-1,-1,-1,0}, dy8[8] = {1,0,-1,-1,-1,0,1,1};
+        map<P, P> graph;
+        int tSize = field.size();
+        assert(field[0].size()==tSize);
+        for(int i=-1;i<=tSize;i++)
+        {
+            for(int j=-1;j<=tSize;j++)
+            {
+                if(i!=-1 && i!=tSize && j!=-1 && j!=tSize && field[i][j]!='#') continue;
+                for(int k=0;k<8;k++)
+                {
+                    int nx1=i+dx8[k], ny1 = j+dy8[k];
+                    int nx2=i+dx8[(k+1)%8], ny2 = j+dy8[(k+1)%8];
+                    if(nx1<0 || tSize <= nx1 || ny1 < 0 || tSize <= ny1) continue;
+                    if(nx2<0 || tSize <= nx2 || ny2 < 0 || tSize <= ny2) continue;
+                    if(field[nx1][ny1]=='#') continue;
+                    if(field[nx2][ny2]=='#') continue;
+                    P st = P(nx1,ny1), gt = P(nx2,ny2);
+                    graph[st] = gt;
+                }
+            }
+        }
+        auto itr = graph.begin();
+        vector<P> ret = {(*itr).first};
+        P cur = (*itr).second;
+        while(cur != ret[0])
+        {
+            assert(graph.find(cur)!=graph.end());
+            ret.emplace_back(cur);
+            cur = graph[cur];
+        }
+        return ret;
+    }
+
+    string generate()
     {
         // 各マスは未定
         auto ret = vector<vector<char>>(tSize, vector<char>(tSize, '*'));
@@ -245,68 +284,67 @@ public:
         }
         // 空いてるマスにアイテムを置く
         int index = 3;
+        vector<vector<P>> itemPos(9);
         assert(_nums[index] != 0);
         for (int i = 0; i < tSize; i++)
             for (int j = 0; j < tSize; j++)
                 if (ret[i][j] == '*')
                     ret[i][j] = '.';
-        for (int i = 0; i < tSize; i++)
+        for (int i = 1; i < tSize-1; i++)
         {
-            for (int j = 0; j < tSize; j++)
+            for (int j = 1; j < tSize-1; j++)
             {
                 if (index >= 9)
                     break;
                 if (ret[i][j] != '.')
                     continue;
                 ret[i][j] = items[index];
+                itemPos[index].emplace_back(i, j);
                 _nums[index]--;
                 if (_nums[index] == 0)
                     index++;
             }
         }
         assert(index == 9);
-        return ret;
-    }
-};
-
-using P = pair<int,int>;
-
-// 
-vector<P> route(const vector<vector<char>> &field)
-{
-    int dx8[8] = {1,1,1,0,-1,-1,-1,0}, dy8[8] = {1,0,-1,-1,-1,0,1,1};
-    map<P, P> graph;
-    int tSize = field.size();
-    assert(field[0].size()==tSize);
-    for(int i=-1;i<=tSize;i++)
-    {
-        for(int j=-1;j<=tSize;j++)
+        _ret  = ret;
+        auto vp = route(ret);
+        vector<P> used = {vp[0]};
+        int sz = vp.size();
+        for(int i=1;i<sz-1;i++)
         {
-            if(i!=-1 && i!=tSize && j!=-1 && j!=tSize && field[i][j]!='#') continue;
-            for(int k=0;k<8;k++)
+            auto pre = used.back(), next = vp[i+1];
+            if(pre.first==vp[i].first && vp[i].first == next.first) continue;
+            if(pre.second==vp[i].second && vp[i].second == next.second) continue;
+            used.emplace_back(vp[i]);
+        }
+        used.emplace_back(vp[sz-1]);
+        string sol = "";
+        for(auto p:used)
+        {
+            string point = "(" + to_string(p.first) + "," + to_string(p.second) + ")" + ",";
+            sol += point;
+        }
+        sol.back() = '#';
+        // start point
+        {
+            auto p = P(iSqs.back().x, iSqs.back().y);
+            string point = "(" + to_string(p.first) + "," + to_string(p.second) + ")" + ",";
+            sol += point;
+        }
+        sol.back() = '#';
+        sol +="#";
+        for(int i=3;i<9;i++)
+        {
+            for(auto p:itemPos[i])
             {
-                int nx1=i+dx8[k], ny1 = j+dy8[k];
-                int nx2=i+dx8[(k+1)%8], ny2 = j+dy8[(k+1)%8];
-                if(nx1<0 || tSize <= nx1 || ny1 < 0 || tSize <= ny1) continue;
-                if(nx2<0 || tSize <= nx2 || ny2 < 0 || tSize <= ny2) continue;
-                if(field[nx1][ny1]=='#') continue;
-                if(field[nx2][ny2]=='#') continue;
-                P st = P(nx1,ny1), gt = P(nx2,ny2);
-                graph[st] = gt;
+                string is ="";is+=items[i];
+                string point = is + "(" + to_string(p.first) + "," + to_string(p.second) + ")" + ";";
+                sol += point;
             }
         }
+        return sol.substr(0, sol.size()-1);
     }
-    auto itr = graph.begin();
-    vector<P> ret = {(*itr).first};
-    P cur = (*itr).second;
-    while(cur != ret[0])
-    {
-        assert(graph.find(cur)!=graph.end());
-        ret.emplace_back(cur);
-        cur = graph[cur];
-    }
-    return ret;
-}
+};
 
 int main()
 {
@@ -315,13 +353,5 @@ int main()
     PuzzleParser parser(puzzle);
     Generator gen(parser.nums, parser.iSqs, parser.oSqs);
     auto ret = gen.generate();
-    for (auto v : ret)
-    {
-        for (auto c : v)
-        {
-            cout << c;
-        }
-        cout << endl;
-    }
-    auto r = route(ret);
+    cout << ret << endl;
 }
