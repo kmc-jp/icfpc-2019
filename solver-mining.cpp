@@ -10,6 +10,7 @@
 #include <fstream>
 #include <utility>
 #include <map>
+#include <time.h>
 
 struct Point {
   int x, y;
@@ -199,15 +200,58 @@ void output_table(const std::vector<std::string>& table) {
   }
 }
 
-unsigned long xor128() {
-  static unsigned long x=11124012, y=31420405, z=21249089, w=21210414;
-  unsigned long t=(x^(x<<11));
-  x=y; y=z; z=w;
-  return ( w=(w^(w>>19))^(t^(t>>8)) );
-}
+struct XorShift
+{
+    using result_type = uint32_t;
+    result_type w = 123456789, x = 362436069, y = 521288629, z = 88675123;
+    XorShift(result_type seed = time(nullptr))
+    {
+        w = seed;
+        x = w << 13;
+        y = (w >> 9) ^ (x << 6);
+        z = y >> 7;
+    }
+    static const result_type min() { return 0; }
+    static const result_type max() { return 0x7FFFFFFF; }
+    result_type operator()()
+    {
+        result_type t = x ^ (x << 11);
+        x = y;
+        y = z;
+        z = w;
+        return w = (w ^ (w >> 19) ^ (t ^ (t >> 8)));
+    }
+    result_type rand()
+    {
+        result_type t = x ^ (x << 11);
+        x = y;
+        y = z;
+        z = w;
+        return w = (w ^ (w >> 19) ^ (t ^ (t >> 8)));
+    }
+    // [min,max] の整数値乱数
+    result_type randInt(result_type min = 0, result_type max = 0x7FFFFFFF)
+    {
+        return rand() % (max - min + 1) + min;
+    }
+    // [min,max] の浮動小数点乱数
+    double randDouble(double min = 0, double max = 1)
+    {
+        return (double)(rand() % 0xFFFF) / 0xFFFF * (max - min) + min;
+    }
+    // 変数をデフォルト値に設定する
+    void SetDefault()
+    {
+        w = 123456789;
+        x = 362436069;
+        y = 521288629;
+        z = 88675123;
+    }
+};
 
 class Solver{
 private:
+  XorShift xsft;
   std::vector<std::string> field;
   int h, w;
   const std::vector<int> vx = {1, 0, -1, 0};
@@ -215,7 +259,8 @@ private:
   const std::vector<char> vc = {'W','D','S','A'};
   std::vector<int> p={0, 1, 2, 3};
   int step = 0;
-  int ccc=0;
+  int ccc = 0;
+  int minstep;
 
   std::vector<std::vector<int>> comp;
   std::vector<std::vector<int>> dir;
@@ -225,6 +270,7 @@ private:
   const int SD = 10;
   int renketu = 0;
   int aaa;
+  std::string finalAnswer="";
 
   struct robot{
     Point pos;
@@ -338,9 +384,9 @@ private:
     while(!bfs.empty()){
       auto now = bfs.front();
       bfs.pop();
-      std::swap(p[xor128()&3],p[xor128()&3]);
-      std::swap(p[xor128()&3],p[xor128()&3]);
-      std::swap(p[xor128()&3],p[xor128()&3]);
+      std::swap(p[xsft.rand()&3],p[xsft.rand()&3]);
+      std::swap(p[xsft.rand()&3],p[xsft.rand()&3]);
+      std::swap(p[xsft.rand()&3],p[xsft.rand()&3]);
       for(int i = 0; i < 4; i++){
         int nx = now.x + vx[p[i]];
         int ny = now.y + vy[p[i]];
@@ -511,15 +557,16 @@ private:
   }
 
 public:
-  Solver(const std::vector<std::string>& table, const Input& input){
+  Solver(const std::vector<std::string>& table, const Input& input, int ms){
     field = table;
+    minstep = ms;
     Point startpos = input.point;
     startpos.x++;
     startpos.y++;
     std::swap(startpos.x, startpos.y);
     h = field.size();
     w = field[0].size();
-    aaa = xor128()%(h*w)+1;
+    aaa = xsft.rand()%(h*w)+1;
     xpos = std::set<std::pair<int,int>>();
     for(int i = 0; i < h; i++){
       for(int j = 0; j < w; j++){
@@ -539,15 +586,12 @@ public:
     bot.push_back({startpos, 1, 0, 0, h*w, "", std::vector<std::vector<int>>(h, std::vector<int>(w, 1))});
   }
 
-  ~Solver(){
-    std::cout << std::endl;
-  }
-
-  int solve(){
+  std::pair<int, std::string> solve(){
     int x=0;
     while(1){
       int sz = bot.size();
       int kk = updateCharge();
+      // std::cout << step << " " << sz << " " << kk << std::endl;
       if(kk == 0) goto end;
       for(int i = 0; i < bot.size(); i++){
         if(bot[i].sol.length() > bot[i].solidx) continue;
@@ -583,6 +627,7 @@ public:
         doMove(i, bot[i].sol[bot[i].solidx]);
       }
       step++;
+      if(step > minstep) return {1000000000, ""};
     }
     end:;
     std::vector<int> end(bot.size());
@@ -607,10 +652,10 @@ public:
       step++;
     }
     for(int i = 0; i < bot.size()-1; i++){
-      std::cout << bot[i].sol << "#";
+      finalAnswer += bot[i].sol + "#";
     }
-    std::cout << bot[bot.size()-1].sol << std::endl;
-    return step;
+    finalAnswer += bot[bot.size()-1].sol;
+    return {step, finalAnswer};
   }
 
 };
@@ -631,19 +676,37 @@ int main() {
     // std::cout << inputfile << std::endl;
     // std::ifstream fin(inputfile);
 
-    std::string line;
-    std::getline(std::cin, line);
-    const auto input = parse(line);
-    auto table = to_table(input);
-    // output_table(table);
+    // std::string line;
+    // std::getline(std::cin, line);
+    // const auto input = parse(line);
+    // auto table = to_table(input);
+    // // output_table(table);
 
-    Solver s(table, input);
-    // std::cout << s.solve() << std::endl;
-    s.solve();
+    // Solver s(table, input);
+    // // std::cout << s.solve() << std::endl;
+    // s.solve();
 
     // fin.close();
 
   // }
+  std::string line;
+  std::getline(std::cin, line);
+  const auto input = parse(line);
+  auto table = to_table(input);
 
+  const int tries = 5;
+  int minstep = 1000000000;
+  std::string ans;
+  
+  for(int t = 0; t < tries; t++){
+    Solver s(table, input, minstep);
+    auto [tmp, tmps] = s.solve();
+    if(tmp < minstep){
+      minstep = tmp;
+      ans = tmps;
+    }
+  }
+
+  std::cout << ans << std::endl;
   return 0;
 }
