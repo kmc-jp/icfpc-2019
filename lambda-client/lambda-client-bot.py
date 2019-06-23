@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import os
+import sys
 import dotenv
 dotenv_path = os.path.join(os.path.dirname(__file__), '.env')
 dotenv.load_dotenv(dotenv_path)
@@ -30,10 +31,11 @@ class ETN:
     def save(self):
         with open(self.fn, "w") as f:
             json.dump(self.db, f)
-db = ETN()
-try:
+def init_block():
+  db = ETN()
+  try:
     db.get("last_block")
-except KeyError:
+  except KeyError:
     db.set("last_block", 0)
 
 SLACK_INCOMING = os.environ.get("SLACK_INCOMING")
@@ -64,39 +66,43 @@ def mining(block):
       f.write(info["task"])
 
   ok = True
-  post(u"*Start Solving for {}*".format(block))
+  post(u"*Start Gen  & Solving for {}*".format(block))
   puzzledescf = 'problems/{}puzzle.desc'.format(block)
+  print("Puzzle")
   with open(puzzledescf, "w") as o:
       with open(puzzlef, "r") as i:
           ps = subprocess.Popen(genp,stderr=subprocess.PIPE,stdin=i,stdout=o)
           err = ps.communicate()[1].decode()
-          post(u"Solve Errout: " + err)
+          post(u"Gen Errout: " + err)
           if ps.returncode != 0:
-              post(u"*Solve ERR* status: " + str(ps.returncode))
+              post(u"*Gen ERR* status: " + str(ps.returncode))
               ok = False
   with open(puzzledescf, "r") as o:
-      post("Solve Result: "+ o.read())
+      post("Gen Result: "+ o.read())
 
-  post(u"End. start Generating")
+  post(u"Gen End. start Solving")
   tasksolf = 'problems/{}task.sol'.format(block)
+  print("Solve")
   with open(tasksolf, "w") as o:
       with open(taskf, "r") as i:
           ps = subprocess.Popen(solp,stderr=subprocess.PIPE,stdin=i,stdout=o)
           err = ps.communicate()[1].decode()
           if ps.returncode != 0:
-              post(u"*Gen ERR* status: " + str(ps.returncode))
+              post(u"*Solve ERR* status: " + str(ps.returncode))
               ok = False
-          post(u"Gen Errout: " + err)
+          post(u"Solve Errout: " + err)
   with open(tasksolf, "r") as o:
-      post("Gen Result: "+ o.read())
+      post("Solve Result: "+ o.read())
 
   if ok:
     post(u"End. start Submit...")
     sub = subprocess.check_output(['cat',puzzledescf,tasksolf]).decode()
-    sub = subprocess.check_output(['echo', './lambda-cli.py','submit',str(block),tasksolf.puzzledescf]).decode()
-    post("Result: "+sub)
+    sub = subprocess.check_output(['./lambda-cli.py','submit',str(block),tasksolf,puzzledescf]).decode()
+    post(":tada: Result: "+sub)
+    print("OK")
   else:
     post(u"*auto mining have failed. Abort submit*")
+    print("Fail")
 
 def check_mining():
   blockinfo = subprocess.check_output(['./lambda-cli.py','getblockchaininfo']).decode()
@@ -119,12 +125,18 @@ def put_coininfo():
   post(res)
 
 import subprocess
-schedule.every(1).minutes.do(check_mining)
-schedule.every(5).minutes.do(put_coininfo)
 
-put_coininfo()
-check_mining()
-
-while True:
+if len(sys.argv) > 1 and sys.argv[1] == "-f":
+  print("Start mining now")
+  db = ETN()
+  db.set("last_block", 0)
+  check_mining()
+else:
+  init_block()
+  schedule.every(1).minutes.do(check_mining)
+  schedule.every(5).minutes.do(put_coininfo)
+  put_coininfo()
+  check_mining()
+  while True:
     schedule.run_pending()
     time.sleep(10)
