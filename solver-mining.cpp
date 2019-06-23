@@ -259,11 +259,12 @@ private:
   const std::vector<char> vc = {'W','D','S','A'};
   std::vector<int> p={0, 1, 2, 3};
   int step = 0;
-  int ccc = 0;
   int minstep;
+  double powt;
 
   std::vector<std::vector<int>> comp;
   std::vector<std::vector<int>> dir;
+  std::vector<std::vector<double>> cef;
   std::vector<std::string> dest;
   std::set<std::pair<int,int>> xpos;
   Point next;
@@ -380,7 +381,7 @@ private:
     // const int limit = aaa;
     const int limit = aaa;
     int tm = 100000000;
-    long long cost = 1e18;
+    double cost = 1e18;
     while(!bfs.empty()){
       auto now = bfs.front();
       bfs.pop();
@@ -396,8 +397,8 @@ private:
           bfs.push({nx, ny});
           if(dest[nx][ny] == '*'){
             if(tm>limit) tm = limit;
-            if(cost > (long long)dist[nx][ny]*dist[nx][ny]*dist[nx][ny]*comp[nx][ny]){
-              cost = (long long)dist[nx][ny]*dist[nx][ny]*dist[nx][ny]*comp[nx][ny];
+            if(cost > std::pow(dist[nx][ny],powt)*comp[nx][ny]*cef[nx][ny]){
+              cost = std::pow(dist[nx][ny],powt)*comp[nx][ny]*cef[nx][ny];
               nxt = {nx, ny};
             }
           }
@@ -553,7 +554,6 @@ private:
       bot.push_back({bot[botid].pos, 1, 0, 0, 0, "", std::vector<std::vector<int>>(h, std::vector<int>(w, 0))});
       assign(botid, bot.size()-1);
       bot[botid].solidx++;
-      ccc--;
     }else{
       bot[botid].solidx++;
     }
@@ -569,14 +569,18 @@ public:
     std::swap(startpos.x, startpos.y);
     h = field.size();
     w = field[0].size();
+
+
     aaa = xsft.rand()%(h*w)+1;
+    powt = (double)(xsft.rand()%4000+500)/1000;
+    double keisu = 1+(double)(xsft.rand()%300)/10000;
+
+    
     xpos = std::set<std::pair<int,int>>();
     for(int i = 0; i < h; i++){
       for(int j = 0; j < w; j++){
         if(field[i][j]=='X'){
           xpos.insert({i, j});
-        }else if(field[i][j]=='C'){
-          ccc++;
         }
       }
     }
@@ -586,7 +590,35 @@ public:
         field[startpos.x+k][startpos.y+1]='+';
       }
     }
+
     bot.push_back({startpos, 1, 0, 0, h*w, "", std::vector<std::vector<int>>(h, std::vector<int>(w, 1))});
+
+    std::vector<std::vector<bool>> fl(h, std::vector<bool>(w, false));
+    cef = std::vector<std::vector<double>>(h, std::vector<double>(w, 1));
+    std::queue<Point> bfs;
+    for(int i = 0; i < h; i++){
+      for(int j = 0; j < w; j++){
+        if(field[i][j]=='#'){
+          bfs.push({i,j});
+          fl[i][j]=true;
+        }
+      }
+    }
+    while(!bfs.empty()){
+      auto now = bfs.front();
+      bfs.pop();
+      for(int i = 0; i < 4; i++){
+        int nx = now.x + vx[i];
+        int ny = now.y + vy[i];
+        if(0<=nx&&nx<h&&0<=ny&&ny<w){
+          if(field[nx][ny]!='#'&&!fl[nx][ny]){
+            fl[nx][ny]=true;
+            cef[nx][ny]=keisu*cef[now.x][now.y];
+            bfs.push({nx, ny});
+          }
+        }
+      }
+    }
   }
 
   std::pair<int, std::string> solve(){
