@@ -260,9 +260,9 @@ private:
         }
       }
       c+=bot[i].chargesize;
-      std::cout << bot[i].chargesize << " ";
+      // std::cout << bot[i].chargesize << " ";
     }
-    std::cout << std::endl;
+    // std::cout << std::endl;
     return c;
   }
 
@@ -548,7 +548,8 @@ public:
   int solve(){
     while(1){
       int sz = bot.size();
-      if(updateCharge() == 0) goto end;
+      int kk = updateCharge();
+      if(kk == 0) goto end;
       for(int i = 0; i < bot.size(); i++){
         if(bot[i].sol.length() > bot[i].solidx) continue;
         if(bot[i].chargesize==0){
@@ -582,11 +583,15 @@ public:
       step++;
     }
     end:;
+    std::vector<int> end(bot.size());
+    for(int i = 0; i < bot.size(); i++){
+      end[i]=bot[i].sol.length();
+    }
     while(1){
       bool endflag = true;
       int sz = bot.size();
       for(int i = 0; i < bot.size(); i++){
-        if(bot[i].sol.length() <= bot[i].solidx) endflag=false;
+        if(end[i] > bot[i].solidx) endflag=false;
       }
       if(endflag) break;
       for(int i = 0; i < sz; i++){
