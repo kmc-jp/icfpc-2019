@@ -1,0 +1,2 @@
+a.out: solver-mining.cpp:90: BoosterCode parse_booster_code(const string&, std::size_t): Assertion `false' failed.
+Aborted (core dumped)
