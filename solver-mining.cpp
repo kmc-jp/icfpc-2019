@@ -739,7 +739,7 @@ int main() {
   
   clock_t now = clock();
   clock_t start = clock();
-  while((now-pstart)/CLOCKS_PER_SEC+dur<600){
+  while((double)(now-pstart)/CLOCKS_PER_SEC+dur<600){
     Solver s(table, input, minstep);
     auto [tmp, tmps] = s.solve();
     if(tmp < minstep){
@@ -747,7 +747,7 @@ int main() {
       ans = tmps;
     }
     now = clock();
-    if(dur==0) dur = (now-start)/CLOCKS_PER_SEC;
+    if(dur==0) dur = (double)(now-start)/CLOCKS_PER_SEC;
   }
 
   std::cout << ans << std::endl;
