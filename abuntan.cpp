@@ -200,7 +200,7 @@ void output_table(const std::vector<std::string>& table) {
 }
 
 unsigned long xor128() {
-  static unsigned long x=11124012, y=31420405, z=21249089, w=21210414;
+  static unsigned long x=11292112, y=31259205, z=21234929, w=24129344;
   unsigned long t=(x^(x<<11));
   x=y; y=z; z=w;
   return ( w=(w^(w>>19))^(t^(t>>8)) );
@@ -320,7 +320,6 @@ private:
     dir[startpos.x][startpos.y] = SD;
     dist[startpos.x][startpos.y] = 0;
     Point nxt = {-1, -1};
-    // const int limit = aaa;
     const int limit = aaa;
     int tm = 100000000;
     long long cost = 1e18;
