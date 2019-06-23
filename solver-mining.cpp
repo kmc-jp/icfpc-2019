@@ -621,6 +621,10 @@ public:
         }
         calcDestination(i);
         calcNext(i);
+        if(next.x==-1){
+          print(i, 'Z');
+          continue;
+        }
         calcRoute(i);
       }
       for(int i = 0; i < sz; i++){
