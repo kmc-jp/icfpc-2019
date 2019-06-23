@@ -230,7 +230,8 @@ private:
     Point pos;
     int len;
     int cl;
-    int numtask;
+    int solidx;
+    int chargesize;
     std::string sol;
     std::vector<std::vector<int>> mask;
   };
@@ -243,16 +244,36 @@ private:
     bot[botid].sol.push_back(c);
   }
 
-  bool calcComponent(int botid){
+  int updateCharge(){
+    int c = 0;
+    for(int i = 0; i < bot.size(); i++){
+      bot[i].chargesize = 0;
+      for(int x = 0; x < h; x++){
+        for(int y = 0; y < w; y++){
+          if(bot[i].mask[x][y]){
+            if(field[x][y]!='#'&&field[x][y]!='+'){
+              bot[i].chargesize++;
+            }else{
+              bot[i].mask[x][y] = 0;
+            }
+          }
+        }
+      }
+      c+=bot[i].chargesize;
+      // std::cout << bot[i].chargesize << " ";
+    }
+    // std::cout << std::endl;
+    return c;
+  }
+
+  void calcComponent(int botid){
     int ma = 1e9;
-    bool ok = false;
     comp = std::vector<std::vector<int>>(h, std::vector<int>(w, -1));
     std::map<int,int> compsize;
     std::queue<Point> bfs;
     for(int i = 0; i < h; i++){
       for(int j = 0; j < w; j++){
         if(field[i][j]!='#'&&field[i][j]!='+'&&comp[i][j]==-1&&bot[botid].mask[i][j]){
-          ok=true;
           bfs.push({i, j});
           comp[i][j] = i*w+j;
           int count = 0;
@@ -278,15 +299,7 @@ private:
         if(comp[i][j]!=-1) comp[i][j]=compsize[comp[i][j]];
       }
     }
-    return ok;
-  }
-
-  void resetMask(int botid){
-    for(int x = 0; x < h; x++){
-      for(int y = 0; y < w; y++){
-        bot[botid].mask[x][y]=(field[x][y]!='#'&&field[x][y]!='+'?1:0);
-      }
-    }
+    return;
   }
 
   void paint(int botid, int nowx, int nowy, std::vector<std::string> &f){
@@ -392,22 +405,22 @@ private:
     }
     bot[botid].pos = next;
     for(int i = move.length()-1; i >= 0; i--){
-      bot[botid].task.push(move[i]);
+      print(botid, move[i]);
     }
     if(bot[botid].cl>0){
       if(xpos.find({bot[botid].pos.x,bot[botid].pos.y})!=xpos.end()){
         for(int i = 0; i < bot[botid].cl; i++){
-          bot[botid].task.push('C');
+          print(botid, 'C');
         }
+        bot[botid].cl=0;
       }
     }
     for(int i = 0; i < bcount; i++){
-      bot[botid].task.push('B');
+      print(botid, "B(" + std::to_string(bot[botid].len+1+i) + ",0)");
     }
     bcount = 0;
   }
 
-  
   Point distantPoint(Point p, std::vector<std::vector<int>> &mask){
     std::queue<Point> bfs;
     std::vector<std::vector<int>> dist = std::vector<std::vector<int>>(h, std::vector<int>(w, -1));
@@ -430,7 +443,18 @@ private:
     return q;
   }
 
-  void divideMask(Point a, Point b, std::vector<std::vector<int>> &mask, std::vector<std::vector<int>> &newmask){
+  void assign(int botidp, int botidc){
+    for(int x = 0; x < h; x++){
+      for(int y = 0; y < w; y++){
+        bot[botidp].mask[x][y]=bot[botidp].mask[x][y]&(field[x][y]!='#'&&field[x][y]!='+'?1:0);
+      }
+    }
+    Point one = distantPoint({bot[botidp].pos.x, bot[botidp].pos.y}, bot[botidp].mask);
+    Point two = distantPoint(one, bot[botidp].mask);
+    divideMask(one, two, botidp, botidc);
+  }
+
+  void divideMask(Point a, Point b, int botidp, int botidc){
     std::queue<Point> bfs;
     std::vector<std::vector<int>> color = std::vector<std::vector<int>>(h, std::vector<int>(w, -1));
     color[a.x][a.y] = 0;
@@ -450,46 +474,42 @@ private:
       }
     }
     
+    std::vector<std::vector<int>> &mask=bot[botidp].mask;
+    std::vector<std::vector<int>> &newmask=bot[botidc].mask;
+    int cp=0,cc=0;
     for(int i = 0; i < h; i++){
       for(int j = 0; j < w; j++){
         if(mask[i][j]){
           if(color[i][j]){
             mask[i][j]=1;
             newmask[i][j]=0;
+            cp++;
           }else{
             mask[i][j]=0;
             newmask[i][j]=1;
+            cc++;
           }
         }
       }
     }
+    bot[botidp].chargesize=cp;
+    bot[botidc].chargesize=cc;
     return;
   }
 
-  bool useItem(int botid, char c){
-    switch(c){
-    case 'B':
+  void doMove(int botid, char c){
+    if(c=='B'){
       bot[botid].len++;
-      print(botid, "B(" + std::to_string(bot[botid].len) + ",0)");
-      return true;
-    case 'C':
-      print(botid, "C");
-      for(int i=0;i<bot[botid].cl;i++){
-        for(int x = 0; x < h; x++){
-          for(int y = 0; y < w; y++){
-            bot[botid].mask[x][y]=bot[botid].mask[x][y]*(field[x][y]!='#'&&field[x][y]!='+'?1:0);
-          }
-        }
-        Point one = distantPoint({bot[botid].pos.x, bot[botid].pos.y}, bot[botid].mask);
-        Point two = distantPoint(one, bot[botid].mask);
-        bot.push_back({bot[botid].pos, 1, 0, std::queue<char>(), "", std::vector<std::vector<int>>(h, std::vector<int>(w, 0))});
-        divideMask(one, two, bot[botid].mask, bot[bot.size()-1].mask);
-      }
-      bot[botid].cl=0;
+      while(bot[botid].sol[bot[botid].solidx]!=')') bot[botid].solidx++;
+      bot[botid].solidx++;
+    }else if(c=='C'){
+      bot.push_back({bot[botid].pos, 1, 0, 0, 0, "", std::vector<std::vector<int>>(h, std::vector<int>(w, 0))});
+      assign(botid, bot.size()-1);
+      bot[botid].solidx++;
       ccc--;
-      return true;
+    }else{
+      bot[botid].solidx++;
     }
-    return false;
   }
 
 public:
@@ -518,7 +538,7 @@ public:
         field[startpos.x+k][startpos.y+1]='+';
       }
     }
-    bot.push_back({startpos, 1, 0, std::queue<char>(), "", std::vector<std::vector<int>>(h, std::vector<int>(w, 1))});
+    bot.push_back({startpos, 1, 0, 0, h*w, "", std::vector<std::vector<int>>(h, std::vector<int>(w, 1))});
   }
 
   ~Solver(){
@@ -528,22 +548,36 @@ public:
   int solve(){
     while(1){
       int sz = bot.size();
+      if(updateCharge() == 0) goto end;
       for(int i = 0; i < bot.size(); i++){
-        if(!bot[i].task.empty()) continue;
-        if(!calcComponent(i)){
-          resetMask(i);
-          if(!calcComponent(i)){
-            goto end;
+        if(bot[i].sol.length() > bot[i].solidx) continue;
+        if(bot[i].chargesize==0){
+          int ma=1, maid=-1;
+          for(int j = 0; j < bot.size(); j++){
+            if(i!=j){
+              if(ma < bot[j].chargesize){
+                ma = bot[j].chargesize;
+                maid = j;
+              }
+            }
           }
+          if(maid==-1){
+            print(i, 'Z');
+            continue;
+          }else{
+            assign(maid, i);
+            calcComponent(i);
+          }
+        }else{
+          calcComponent(i);
         }
         calcDestination(i);
         calcNext(i);
         calcRoute(i);
       }
+        // std::cout << "ok" << std::endl;
       for(int i = 0; i < sz; i++){
-        bool wt = useItem(i, bot[i].task.front());
-        if(!wt) print(i, bot[i].task.front());
-        bot[i].task.pop();
+        doMove(i, bot[i].sol[bot[i].solidx]);
       }
       step++;
     }
@@ -552,14 +586,12 @@ public:
       bool endflag = true;
       int sz = bot.size();
       for(int i = 0; i < bot.size(); i++){
-        if(!bot[i].task.empty()) endflag=false;
+        if(bot[i].sol.length() <= bot[i].solidx) endflag=false;
       }
       if(endflag) break;
       for(int i = 0; i < sz; i++){
-        if(!bot[i].task.empty()){
-          bool wt = useItem(i, bot[i].task.front());
-          if(!wt) print(i, bot[i].task.front());
-          bot[i].task.pop();
+        if(bot[i].sol.length() > bot[i].solidx){
+          doMove(i, bot[i].sol[bot[i].solidx]);
         }else{
           print(i, 'Z');
         }
