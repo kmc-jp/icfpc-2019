@@ -4,6 +4,7 @@
 #include <tuple>
 #include <iostream>
 #include <algorithm>
+#include <map>
 
 // !!!
 using namespace std;
@@ -140,10 +141,8 @@ public:
         }
         int corner = 4, cmax = (vMin + vMax) / 2;
         // 禁止マスを # に
-
         for (auto p : oSqs)
         {
-            //if(p.x==20) cerr << p.x << " "<<p.y << endl;
             ret[p.x][p.y] = '#';
             // 右か左の端に繋げる
             bool l = true, r = true;
@@ -157,27 +156,40 @@ public:
                     r = false;
             }
             assert(l || r);
-            if (l)
+            if(l && r)
+            {
+                // more close 
+                if(p.y<tSize/2)
+                {
+                    for (int j = p.y; j >= 0; j--)
+                    {
+                        ret[p.x][j] = '#';
+                    }
+                }
+                else
+                {
+                    for (int j = p.y; j < tSize; j++)
+                    {
+                        ret[p.x][j] = '#';
+                    }
+                }
+            }
+            else if (l)
             {
                 for (int j = p.y; j >= 0; j--)
                 {
-                    if(p.x == 20)
-                    {
-                        // cerr << p.x << " "<< j << endl;
-                        cerr << ret[p.x-1][j] << endl;
-                    }
                     ret[p.x][j] = '#';
-                    if (p.x > 0 && ret[p.x - 1][j] == '#')
-                        break;
+                    // if (p.x > 0 && ret[p.x - 1][j] == '#')
+                    //    break;
                 }
             }
-            else
+            else // r
             {
                 for (int j = p.y; j < tSize; j++)
                 {
                     ret[p.x][j] = '#';
-                    if (p.x > 0 && ret[p.x - 1][j] == '#')
-                        break;
+                    // if (p.x > 0 && ret[p.x - 1][j] == '#')
+                    //    break;
                 }
             }
             corner += 2; // 怪しい
@@ -188,11 +200,12 @@ public:
             for (int j = 0; j < tSize; j++)
             {
                 if(0<i && i<tSize-1 && 0<j && j<tSize-1) continue;
+                if((i==0 || i==tSize-1)&&(j<=3 || tSize-3<=j)) continue;
                 if (corner > cmax)
                     break;
                 if (ret[i][j] != '*')
                     continue;
-                if ((i + j) % 2)
+                if ((i + j) % 3)
                     continue;
                 bool f = true;
                 for(int k=0;k<8;k++)
@@ -205,6 +218,28 @@ public:
                 {
                     ret[i][j] = '#';
                     corner += 2;
+                }
+            }
+        }
+        // othello
+        for(int j=0;j<tSize;j++)
+        {
+            assert(ret[0][j]!='.');
+            if(ret[1][j]=='#') ret[0][j] = '#';
+        }
+        for(int j=0;j<tSize;j++)
+        {
+            assert(ret[tSize-1][j]!='.');
+            if(ret[tSize-2][j]=='#') ret[tSize-1][j] = '#';
+        }
+        for(int i=1;i<tSize-1;i++)
+        {
+            for(int j=0;j<tSize;j++)
+            {
+                if(ret[i-1][j]=='#' && ret[i+1][j]=='#')
+                {
+                    assert(ret[i][j]!='.');
+                    ret[i][j] = '#';
                 }
             }
         }
@@ -234,6 +269,45 @@ public:
     }
 };
 
+using P = pair<int,int>;
+
+// 
+vector<P> route(const vector<vector<char>> &field)
+{
+    int dx8[8] = {1,1,1,0,-1,-1,-1,0}, dy8[8] = {1,0,-1,-1,-1,0,1,1};
+    map<P, P> graph;
+    int tSize = field.size();
+    assert(field[0].size()==tSize);
+    for(int i=-1;i<=tSize;i++)
+    {
+        for(int j=-1;j<=tSize;j++)
+        {
+            if(i!=-1 && i!=tSize && j!=-1 && j!=tSize && field[i][j]!='#') continue;
+            for(int k=0;k<8;k++)
+            {
+                int nx1=i+dx8[k], ny1 = j+dy8[k];
+                int nx2=i+dx8[(k+1)%8], ny2 = j+dy8[(k+1)%8];
+                if(nx1<0 || tSize <= nx1 || ny1 < 0 || tSize <= ny1) continue;
+                if(nx2<0 || tSize <= nx2 || ny2 < 0 || tSize <= ny2) continue;
+                if(field[nx1][ny1]=='#') continue;
+                if(field[nx2][ny2]=='#') continue;
+                P st = P(nx1,ny1), gt = P(nx2,ny2);
+                graph[st] = gt;
+            }
+        }
+    }
+    auto itr = graph.begin();
+    vector<P> ret = {(*itr).first};
+    P cur = (*itr).second;
+    while(cur != ret[0])
+    {
+        assert(graph.find(cur)!=graph.end());
+        ret.emplace_back(cur);
+        cur = graph[cur];
+    }
+    return ret;
+}
+
 int main()
 {
     string puzzle;
@@ -249,4 +323,5 @@ int main()
         }
         cout << endl;
     }
+    auto r = route(ret);
 }
