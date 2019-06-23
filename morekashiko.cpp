@@ -10,6 +10,7 @@
 #include <fstream>
 #include <utility>
 #include <map>
+#include <time.h>
 
 struct Point {
   int x, y;
@@ -199,15 +200,58 @@ void output_table(const std::vector<std::string>& table) {
   }
 }
 
-unsigned long xor128() {
-  static unsigned long x=11259012, y=32150205, z=2112592, w=2598241;
-  unsigned long t=(x^(x<<11));
-  x=y; y=z; z=w;
-  return ( w=(w^(w>>19))^(t^(t>>8)) );
-}
+struct XorShift
+{
+    using result_type = uint32_t;
+    result_type w = 123456789, x = 362436069, y = 521288629, z = 88675123;
+    XorShift(result_type seed = time(nullptr))
+    {
+        w = seed;
+        x = w << 13;
+        y = (w >> 9) ^ (x << 6);
+        z = y >> 7;
+    }
+    static const result_type min() { return 0; }
+    static const result_type max() { return 0x7FFFFFFF; }
+    result_type operator()()
+    {
+        result_type t = x ^ (x << 11);
+        x = y;
+        y = z;
+        z = w;
+        return w = (w ^ (w >> 19) ^ (t ^ (t >> 8)));
+    }
+    result_type rand()
+    {
+        result_type t = x ^ (x << 11);
+        x = y;
+        y = z;
+        z = w;
+        return w = (w ^ (w >> 19) ^ (t ^ (t >> 8)));
+    }
+    // [min,max] の整数値乱数
+    result_type randInt(result_type min = 0, result_type max = 0x7FFFFFFF)
+    {
+        return rand() % (max - min + 1) + min;
+    }
+    // [min,max] の浮動小数点乱数
+    double randDouble(double min = 0, double max = 1)
+    {
+        return (double)(rand() % 0xFFFF) / 0xFFFF * (max - min) + min;
+    }
+    // 変数をデフォルト値に設定する
+    void SetDefault()
+    {
+        w = 123456789;
+        x = 362436069;
+        y = 521288629;
+        z = 88675123;
+    }
+};
 
 class Solver{
 private:
+  XorShift xsft;
   std::vector<std::string> field;
   int h, w;
   const std::vector<int> vx = {1, 0, -1, 0};
@@ -338,9 +382,9 @@ private:
     while(!bfs.empty()){
       auto now = bfs.front();
       bfs.pop();
-      std::swap(p[xor128()&3],p[xor128()&3]);
-      std::swap(p[xor128()&3],p[xor128()&3]);
-      std::swap(p[xor128()&3],p[xor128()&3]);
+      std::swap(p[xsft.rand()&3],p[xsft.rand()&3]);
+      std::swap(p[xsft.rand()&3],p[xsft.rand()&3]);
+      std::swap(p[xsft.rand()&3],p[xsft.rand()&3]);
       for(int i = 0; i < 4; i++){
         int nx = now.x + vx[p[i]];
         int ny = now.y + vy[p[i]];
@@ -519,7 +563,7 @@ public:
     std::swap(startpos.x, startpos.y);
     h = field.size();
     w = field[0].size();
-    aaa = xor128()%(h*w)+1;
+    aaa = xsft.rand()%(h*w)+1;
     xpos = std::set<std::pair<int,int>>();
     for(int i = 0; i < h; i++){
       for(int j = 0; j < w; j++){
