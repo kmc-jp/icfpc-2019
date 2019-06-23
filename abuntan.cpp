@@ -11,13 +11,6 @@
 #include <utility>
 #include <map>
 
-unsigned long xor128() {
-  static unsigned long x=11240212, y=32124905, z=21404089, w=21240323;
-  unsigned long t=(x^(x<<11));
-  x=y; y=z; z=w;
-  return ( w=(w^(w>>19))^(t^(t>>8)) );
-}
-
 struct Point {
   int x, y;
 };
@@ -206,12 +199,17 @@ void output_table(const std::vector<std::string>& table) {
   }
 }
 
+unsigned long xor128() {
+  static unsigned long x=11124012, y=31420405, z=21249089, w=21210414;
+  unsigned long t=(x^(x<<11));
+  x=y; y=z; z=w;
+  return ( w=(w^(w>>19))^(t^(t>>8)) );
+}
+
 class Solver{
 private:
   std::vector<std::string> field;
   int h, w;
-  std::random_device seed_gen;
-  std::mt19937 engine;
   const std::vector<int> vx = {1, 0, -1, 0};
   const std::vector<int> vy = {0, 1, 0, -1};
   const std::vector<char> vc = {'W','D','S','A'};
@@ -226,7 +224,7 @@ private:
   Point next;
   const int SD = 10;
   int renketu = 0;
-  int aaa,bbb;
+  int aaa;
 
   struct robot{
     Point pos;
@@ -323,13 +321,15 @@ private:
     dist[startpos.x][startpos.y] = 0;
     Point nxt = {-1, -1};
     // const int limit = aaa;
-    const int limit = 10000000;
+    const int limit = aaa;
     int tm = 100000000;
     long long cost = 1e18;
     while(!bfs.empty()){
       auto now = bfs.front();
       bfs.pop();
-      std::shuffle(p.begin(), p.end(), engine);
+      std::swap(p[xor128()%4],p[xor128()%4]);
+      std::swap(p[xor128()%4],p[xor128()%4]);
+      std::swap(p[xor128()%4],p[xor128()%4]);
       for(int i = 0; i < 4; i++){
         int nx = now.x + vx[p[i]];
         int ny = now.y + vy[p[i]];
@@ -463,21 +463,6 @@ private:
         }
       }
     }
-    
-        // for(int x = h-1;x>=0;x--){
-        //   for(int y =0;y<w;y++){
-        //     std::cout << mask[x][y];
-        //   }
-        //   std::cout << std::endl;
-        // }
-        // std::cout << std::endl;
-        // for(int x = h-1;x>=0;x--){
-        //   for(int y =0;y<w;y++){
-        //     std::cout << newmask[x][y];
-        //   }
-        //   std::cout << std::endl;
-        // }
-        // std::cout << std::endl;
     return;
   }
 
@@ -516,9 +501,7 @@ public:
     std::swap(startpos.x, startpos.y);
     h = field.size();
     w = field[0].size();
-    engine=std::mt19937(seed_gen());
-    aaa = xor128()%h*w+1;
-    bbb = xor128()%(h*w/50)+1;
+    aaa = xor128()%(h*w)+1;
     xpos = std::set<std::pair<int,int>>();
     for(int i = 0; i < h; i++){
       for(int j = 0; j < w; j++){
@@ -558,18 +541,10 @@ public:
         calcRoute(i);
       }
       for(int i = 0; i < sz; i++){
-        // for(int x = h-1;x>=0;x--){
-        //   for(int y =0;y<w;y++){
-        //     std::cout << bot[i].mask[x][y];
-        //   }
-        //   std::cout << std::endl;
-        // }
-        // std::cout << std::endl;
         bool wt = useItem(i, bot[i].task.front());
         if(!wt) print(i, bot[i].task.front());
         bot[i].task.pop();
       }
-      // output_table(field);
       step++;
     }
     end:;

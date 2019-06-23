@@ -11,7 +11,7 @@
 #include <utility>
 
 unsigned long xor128() {
-  static unsigned long x=15121123, y=36125985, z=512224629, w=881259873;
+  static unsigned long x=15112312, y=322134285, z=5215892, w=21291023;
   unsigned long t=(x^(x<<11));
   x=y; y=z; z=w;
   return ( w=(w^(w>>19))^(t^(t>>8)) );
