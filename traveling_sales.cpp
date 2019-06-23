@@ -357,22 +357,21 @@ private:
     return;
   }
 
-  void rec(std::vector<std::vector<int>> &Y, int i, int S, std::vector<int> &result)
+  void path(std::vector<std::vector<int>> &Y, int i, int S, std::vector<int> &result)
   {
     if (S != 0)
-      rec(Y, Y[i][S], S & ~(1 << i), result);
+      path(Y, Y[i][S], S & ~(1 << i), result);
     result.push_back(i);
   }
 
-  int TSP(std::vector<std::vector<int>> &E, int s, std::vector<int> &result)
+  int travelingSales(std::vector<std::vector<int>> &E, int s, std::vector<int> &result)
   {
     const int n = E.size(), N = 1 << n;
     std::vector<std::vector<int>> X(n, std::vector<int>(N, inf));
     std::vector<std::vector<int>> Y(n, std::vector<int>(N, -1));
     for (int i = 0; i < n; ++i)
     {
-      //X[i][1 << i] = E[s][i];
-      X[i][1 << i] = calcDist(s, i);
+      X[i][1 << i] = E[s][i];
       Y[i][1 << i] = s;
     }
     for (int S = 1; S < N; ++S)
@@ -385,17 +384,16 @@ private:
         {
           if (S & (i << j))
             continue;
-          //if (X[j][S | (1 << j)] > X[i][S] + E[i][j])
-          if (X[j][S | (1 << j)] > X[i][S] + calcDist(i, j))
+          if (X[j][S | (1 << j)] > X[i][S] + E[i][j])
           {
-            //X[j][S | (1 << j)] = X[i][S] + E[i][j];
+            X[j][S | (1 << j)] = X[i][S] + E[i][j];
             Y[j][S | (1 << j)] = i;
           }
         }
       }
     }
     result.clear();
-    rec(Y, s, (1 << n) - 1, result);
+    path(Y, s, (1 << n) - 1, result);
     return X[s].back();
   }
 
