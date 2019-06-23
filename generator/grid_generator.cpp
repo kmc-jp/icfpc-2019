@@ -6,6 +6,7 @@
 #include <algorithm>
 #include <map>
 #include <set>
+#include <queue>
 
 // !!!
 using namespace std;
@@ -14,6 +15,11 @@ struct Point
 {
     int x, y;
 };
+
+bool operator<(const Point &l, const Point &r)
+{
+    return l.x != r.x ? l.x < r.x : l.y < r.y;
+}
 
 std::tuple<int, std::size_t> parse_num(const std::string &line, std::size_t i)
 {
@@ -201,8 +207,13 @@ public:
         int corner = 4, cmax = (vMin + vMax) / 2; // 暫定頂点数, 最大頂点数(頂点数を雑に数えているのでマージンを取っている)
         // 禁止マスを # に
         set<int> usedx = {-1, tSize}; // 禁止マスが存在する行番号(と番兵)
+        priority_queue<Point> pq;     // 座標の小さいやつから取り出す
         for (auto p : oSqs)
+            pq.push(p);
+        while (!pq.empty())
         {
+            auto p = pq.top();
+            pq.pop();
             ret[p.x][p.y] = '#';
             usedx.insert(p.x);
             // 右か左の端に繋げる
@@ -216,7 +227,7 @@ public:
                 else if (p.y < j)
                     r = false;
             }
-            assert(l || r);
+            // assert(l || r);
             int up_l = -1, up_r = tSize + 1, down_l = -1, down_r = tSize + 1;
             if (l && r)
             {
@@ -243,12 +254,18 @@ public:
                     ret[p.x][j] = '#';
                 }
             }
-            else // r
+            else if (r)
             {
                 for (int j = p.y; j < tSize; j++)
                 {
                     ret[p.x][j] = '#';
                 }
+            }
+            else if (p.x != tSize - 1) // 最終行はそのままなので
+            {                          // 左右に伸ばせない時は下に行く
+                // assert(false);
+                assert(ret[p.x + 1][p.y] != '.');
+                pq.push(Point{p.x + 1, p.y});
             }
             corner += 2; // 怪しい
         }
