@@ -37,6 +37,7 @@ std::tuple<Point, std::size_t> parse_point(const std::string &line, const std::s
     return std::make_tuple(Point{x, y}, index2 + 1);
 }
 
+// puzzle パーサー
 class PuzzleParser
 {
 public:
@@ -98,25 +99,26 @@ public:
 
 class Generator
 {
+    using P = pair<int, int>;
     // 作る盤面の座標最大値(min:= tSize - floor(0.1*tSize), area_min:= floor(0.2*tSize-2))
-    int tSize;
+    int tSize; // UNREFERENCED
     // 盤面の最小/最大頂点数
     int vMin, vMax;
     // ブラシ, 倍速, ドリル, ワープ, クローン, Xマス
     int mNum, fNum, dNum, rNum, cNum, xNum;
     // 必須マス, 禁止マス
     std::vector<Point> iSqs, oSqs;
-    int dx[4] = {1, 0, -1, 0}, dy[4] = {0, -1, 0, 1};
-    int dx8[8] = {1, 1, 1, 0, -1, -1, -1, 0}, dy8[8] = {1, 0, -1, -1, -1, 0, 1, 1};
     const string items = "$$$BFLRCX";
-    std::vector<int> _nums;
-    vector<vector<char>> _ret;
+    std::vector<int> _nums;    // 数値パース結果
+    vector<vector<char>> _ret; // generate 結果
 
 public:
+    // 数値パース結果, 必須マス, 禁止マス
     Generator(const vector<int> &nums, std::vector<Point> &is, std::vector<Point> &os)
     {
         iSqs = is;
         oSqs = os;
+        // 座標でソート
         sort(oSqs.begin(), oSqs.end(), [](Point l, Point r) { return l.x != r.x ? l.x < r.x : l.y < r.y; });
         _nums = nums;
         assert(nums.size() == 9);
@@ -131,14 +133,16 @@ public:
         xNum = nums[8];
     }
 
-    using P = pair<int, int>;
-
+    // グリッド(多角形)を反時計回りに辿る経路を返す
+    // マスの中心ではなく, 通る辺の座標
     vector<P> route(const vector<vector<char>> &field)
     {
+        int dx[4] = {1, 0, -1, 0}, dy[4] = {0, -1, 0, 1};
         int dx4[4] = {1, 1, 0, 0}, dy4[4] = {1, 0, 0, 1};
         map<P, P> graph;
         int tSize = field.size();
         assert(field[0].size() == tSize);
+        // グリッド外, もしくは # マスから反時計回りに見て辺を繋ぐ
         for (int i = -1; i <= tSize; i++)
         {
             for (int j = -1; j <= tSize; j++)
@@ -171,6 +175,7 @@ public:
         return ret;
     }
 
+    // 生成したグリッド出力
     void printret()
     {
         for (auto v : _ret)
@@ -186,17 +191,16 @@ public:
         // 各マスは未定
         auto ret = vector<vector<char>>(tSize, vector<char>(tSize, '*'));
         // 必須マスを . に
-        set<int> isx;
+        set<int> isx; // 必須マスの存在する行番号
         for (auto p : iSqs)
         {
-            // cerr << p.x << " " << p.y << endl;
             ret[p.x][p.y] = '.';
             isx.insert(p.x);
         }
         cerr << "iSqs done" << endl;
-        int corner = 4, cmax = (vMin + vMax) / 2;
+        int corner = 4, cmax = (vMin + vMax) / 2; // 暫定頂点数, 最大頂点数(頂点数を雑に数えているのでマージンを取っている)
         // 禁止マスを # に
-        set<int> usedx = {-1, tSize};
+        set<int> usedx = {-1, tSize}; // 禁止マスが存在する行番号(と番兵)
         for (auto p : oSqs)
         {
             ret[p.x][p.y] = '#';
@@ -249,16 +253,21 @@ public:
             corner += 2; // 怪しい
         }
         cerr << "oSqs done" << endl;
-        // 角の個数を調整
-        int tmp = 0;
+        // 角の個数を調整 適当な空間に 長い棒と1*1の突起を生やす
+        // !!! 禁止マスが増える, 頂点数制約が厳しくなると壊れる
+        int col = 0; // col 行目までは見た
         for (int i = 3; i < tSize - 3; i++)
         {
             auto low = usedx.lower_bound(i), up = low;
             low--;
+            // 前後に禁止マスがある場合盤面を分割しかねないので作らない
+            // 3 じゃない気がする
             if (abs(i - (*low)) <= 3 || abs(i - (*up)) <= 3)
                 continue;
+            // 必須マスがある行には作らない
             if (isx.find(i) != isx.end())
                 continue;
+            // 突起を一つ生やすと頂点数は4増える?
             for (int j = 0; j < tSize - 4; j++)
             {
                 ret[i][j] = '#';
@@ -267,19 +276,20 @@ public:
                 if (ret[i - 1][j] != '.')
                 {
                     ret[i - 1][j] = '#';
-                    corner += 2;
+                    corner += 4;
                 }
                 if (ret[i + 1][j] != '.')
                 {
                     ret[i + 1][j] = '#';
-                    corner += 2;
+                    corner += 4;
                 }
             }
-            tmp = i + 5;
+            col = i + 5;
             break;
         }
+        // 600 個ぐらいまでは一本生やせばいいが...
         /* 
-        for(int i=tmp;i<tSize-3;i++)
+        for(int i=col;i<tSize-3;i++)
         {
             auto low = usedx.lower_bound(i), up = low;
             low--;
@@ -304,54 +314,19 @@ public:
         }*/
         cerr << corner << endl;
         cerr << "corner done" << endl;
-        // othello
-        for (int j = 0; j < tSize; j++)
-        {
-            assert(ret[0][j] != '.');
-            if (ret[1][j] == '#')
-                ret[0][j] = '#';
-        }
-        for (int j = 0; j < tSize; j++)
-        {
-            assert(ret[tSize - 1][j] != '.');
-            if (ret[tSize - 2][j] == '#')
-                ret[tSize - 1][j] = '#';
-        }
-        for (int i = 2; i < tSize - 2; i++)
-        {
-            for (int j = 0; j < tSize; j++)
-            {
-                if (ret[i - 1][j] == '#' && ret[i + 1][j] == '#')
-                {
-                    assert(ret[i][j] != '.');
-                    ret[i][j] = '#';
-                }
-            }
-        }
-        for (int j = 1; j < tSize - 1; j++)
-        {
-            int i = 0;
-            if (ret[i][j - 1] == '#' && ret[i][j + 1] == '#')
-            {
-                assert(ret[i][j] != '.');
-                ret[i][j] = '#';
-            }
-            i = tSize - 1;
-            if (ret[i][j - 1] == '#' && ret[i][j + 1] == '#')
-            {
-                assert(ret[i][j] != '.');
-                ret[i][j] = '#';
-            }
-        }
-        cerr << "othello done" << endl;
+
+        // othello deleted
+
         // 空いてるマスにアイテムを置く
-        int index = 3;
+        int index = 3; // index 番目のアイテムは num[index] 個置く
         vector<vector<P>> itemPos(9);
         assert(_nums[index] != 0);
+        // 未定の場所は全て空きマスにする
         for (int i = 0; i < tSize; i++)
             for (int j = 0; j < tSize; j++)
                 if (ret[i][j] == '*')
                     ret[i][j] = '.';
+        // 空いてたら置く
         for (int i = 1; i < tSize - 1; i++)
         {
             for (int j = 1; j < tSize - 1; j++)
@@ -374,11 +349,14 @@ public:
         }
         assert(index == 9);
         _ret = ret;
+        // 経路作成
         auto vp = route(ret);
         cerr << "route done" << endl;
-        printret();
+        // デバッグ出力
+        // printret();
         vector<P> used = {vp[0]};
         int sz = vp.size();
+        // 一直線に並ぶ点は端点だけ出力
         for (int i = 1; i < sz - 1; i++)
         {
             auto pre = used.back(), next = vp[i + 1];
@@ -402,7 +380,9 @@ public:
                 used.emplace_back(vp[sz - 1]);
             }
         }
+        // これは頂点数と一致する??
         cerr << used.size() << endl;
+        // 経路, 開始位置, アイテム位置 を出力形式に変換
         string sol = "";
         for (auto p : used)
         {
