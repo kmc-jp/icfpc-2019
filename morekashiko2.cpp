@@ -592,6 +592,7 @@ public:
     while(1){
       int sz = bot.size();
       int kk = updateCharge();
+      // std::cout << step << " " << sz << " " << kk << std::endl;
       if(kk == 0) goto end;
       for(int i = 0; i < bot.size(); i++){
         if(bot[i].sol.length() > bot[i].solidx) continue;
@@ -629,7 +630,6 @@ public:
       step++;
     }
     end:;
-    std::cout << "end" << std::endl;
     std::vector<int> end(bot.size());
     for(int i = 0; i < bot.size(); i++){
       end[i]=bot[i].sol.length();
