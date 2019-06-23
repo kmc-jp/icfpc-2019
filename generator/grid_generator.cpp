@@ -7,6 +7,7 @@
 #include <map>
 #include <set>
 #include <queue>
+#include <functional>
 
 // !!!
 using namespace std;
@@ -18,7 +19,9 @@ struct Point
 
 bool operator<(const Point &l, const Point &r)
 {
-    return l.x != r.x ? l.x < r.x : l.y < r.y;
+    using P=pair<int,int>;
+    return P(l.x, l.y) > P(r.x, r.y);
+    //return l.x != r.x ? l.x < r.x : l.y < r.y;
 }
 
 std::tuple<int, std::size_t> parse_num(const std::string &line, std::size_t i)
@@ -215,6 +218,7 @@ public:
             auto p = pq.top();
             pq.pop();
             ret[p.x][p.y] = '#';
+            // cerr << p.x << " "<<p.y << endl;
             usedx.insert(p.x);
             // 右か左の端に繋げる
             bool l = true, r = true;
@@ -378,7 +382,7 @@ public:
         auto vp = route(ret);
         cerr << "route done" << endl;
         // デバッグ出力
-        // printret();
+        //printret();
         vector<P> used = {vp[0]};
         int sz = vp.size();
         // 一直線に並ぶ点は端点だけ出力
