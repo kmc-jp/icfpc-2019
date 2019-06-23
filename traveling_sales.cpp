@@ -316,7 +316,7 @@ private:
   }
 
   //物Bと物Cの間の最短経路を幅優先探索で求める
-  void calcDist(std::vector<Point> node)
+  void calcDist(std::vector<Point> node, std::vector<std::vector<std::string>> &result)
   {
     int n = node.size();
     //距離
@@ -326,7 +326,7 @@ private:
     {
       for (int to = from + 1; to < n; ++to)
       {
-        std::vector<std::vector<bool>> used(h, std::vector<bool>(w, false));
+        std::vector<std::vector<int>> dir(h, std::vector<int>(w, -1));
         std::queue<Point> bfs;
         Point startpos = node[0];
         bfs.push(startpos);
@@ -339,10 +339,10 @@ private:
           {
             int nx = now.x + vx[p[i]];
             int ny = now.y + vy[p[i]];
-            if (field[nx][ny] != '#' && used[nx][ny] == false)
+            if (field[nx][ny] != '#' && dir[nx][ny] == -1)
             {
               bfs.push({nx, ny});
-              used[nx][ny] = true;
+              dir[nx][ny] = p[i];
               dist[nx][ny] = dist[now.x][now.y] + 1;
               if (nx == node[to].x && ny == node[to].y)
               {
@@ -352,8 +352,20 @@ private:
           }
         }
       end:;
+        std::string move = "";
+        int nx = node[to].x, ny = node[to].y;
+        int bcount = 0;
+        while (nx != node[to].x, ny != node[to].y)
+        {
+          int d = dir[nx][ny];
+          move.push_back(vc[d]);
+          nx -= vx[d];
+          ny -= vy[d];
+        }
+        result[from][to] = move;
       }
     }
+
     return;
   }
 
@@ -364,9 +376,10 @@ private:
     result.push_back(i);
   }
 
-  int travelingSales(std::vector<std::vector<int>> &E, int s, std::vector<int> &result)
+  int travelingSales(std::vector<std::vector<int>> &E, std::vector<int> &result)
   {
     const int n = E.size(), N = 1 << n;
+    int s = 0;
     std::vector<std::vector<int>> X(n, std::vector<int>(N, inf));
     std::vector<std::vector<int>> Y(n, std::vector<int>(N, -1));
     for (int i = 0; i < n; ++i)
