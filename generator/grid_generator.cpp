@@ -106,7 +106,7 @@ class Generator
     int mNum, fNum, dNum, rNum, cNum, xNum;
     // 必須マス, 禁止マス
     std::vector<Point> iSqs, oSqs;
-    int dx[4] = {1, 0, -1, 0}, dy[4] = {0, 1, 0, -1};
+    int dx[4] = {1, 0, -1, 0}, dy[4] = {0, -1, 0, 1};
     int dx8[8] = {1,1,1,0,-1,-1,-1,0}, dy8[8] = {1,0,-1,-1,-1,0,1,1};
     const string items = "$$$BFLRCX";
     std::vector<int> _nums;
@@ -135,7 +135,7 @@ public:
 
     vector<P> route(const vector<vector<char>> &field)
     {
-        int dx8[8] = {1,1,1,0,-1,-1,-1,0}, dy8[8] = {1,0,-1,-1,-1,0,1,1};
+        int dx4[4] = {1,1,0,0}, dy4[4] = {1,0,0,1};
         map<P, P> graph;
         int tSize = field.size();
         assert(field[0].size()==tSize);
@@ -144,15 +144,12 @@ public:
             for(int j=-1;j<=tSize;j++)
             {
                 if(i!=-1 && i!=tSize && j!=-1 && j!=tSize && field[i][j]!='#') continue;
-                for(int k=0;k<8;k++)
+                for(int k=0;k<4;k++)
                 {
-                    int nx1=i+dx8[k], ny1 = j+dy8[k];
-                    int nx2=i+dx8[(k+1)%8], ny2 = j+dy8[(k+1)%8];
+                    int nx1=i+dx[k], ny1 = j+dy[k];
                     if(nx1<0 || tSize <= nx1 || ny1 < 0 || tSize <= ny1) continue;
-                    if(nx2<0 || tSize <= nx2 || ny2 < 0 || tSize <= ny2) continue;
                     if(field[nx1][ny1]=='#') continue;
-                    if(field[nx2][ny2]=='#') continue;
-                    P st = P(nx1,ny1), gt = P(nx2,ny2);
+                    P st = P(i + dx4[k], j + dy4[k]), gt = P(i + dx4[(k+1)%4], j + dy4[(k+1)%4]);
                     graph[st] = gt;
                 }
             }
@@ -238,8 +235,6 @@ public:
                 for (int j = p.y; j >= 0; j--)
                 {
                     ret[p.x][j] = '#';
-                    // if (p.x > 0 && ret[p.x - 1][j] == '#')
-                    //    break;
                 }
             }
             else // r
@@ -247,42 +242,12 @@ public:
                 for (int j = p.y; j < tSize; j++)
                 {
                     ret[p.x][j] = '#';
-                    // if (p.x > 0 && ret[p.x - 1][j] == '#')
-                    //    break;
                 }
             }
             corner += 2; // 怪しい
         }
         cerr << "oSqs done"<<endl;
         // 角の個数を調整
-        /*
-        for (int i = 0; i < tSize; i++)
-        {
-            for (int j = 0; j < tSize; j++)
-            {
-                if(0<i && i<tSize-1 && 0<j && j<tSize-1) continue;
-                if((i==0 || i==tSize-1)&&(j<=3 || tSize-3<=j)) continue;
-                if (corner > cmax)
-                    break;
-                if (ret[i][j] != '*')
-                    continue;
-                if ((i + j) % 3)
-                    continue;
-                bool f = true;
-                for(int k=0;k<8;k++)
-                {
-                    int nx = i + dx8[k], ny = j + dy8[k];
-                    if(nx<0 || tSize <= nx || ny < 0 || tSize <= ny) continue;
-                    if(ret[nx][ny]=='#') f = false;
-                }
-                if(f)
-                {
-                    ret[i][j] = '#';
-                    corner += 2;
-                }
-            }
-        }
-        */
         int tmp = 0;
         for(int i=3;i<tSize-3;i++)
         {
@@ -308,6 +273,7 @@ public:
             tmp = i + 5;
             break;
         }
+        /* 
         for(int i=tmp;i<tSize-3;i++)
         {
             auto low = usedx.lower_bound(i), up = low;
@@ -330,7 +296,7 @@ public:
                 }
             }
             break;
-        }
+        }*/
         cerr << corner << endl;
         cerr << "corner done"<<endl;
         // othello
@@ -395,11 +361,15 @@ public:
             }
         }
         cerr << "items done"<<endl;
+        for(auto p:iSqs)
+        {
+            assert(ret[p.x][p.y]!='#');
+        }
         assert(index == 9);
         _ret  = ret;
         auto vp = route(ret);
         cerr <<"route done"<<endl;
-        printret();
+        // printret();
         vector<P> used = {vp[0]};
         int sz = vp.size();
         for(int i=1;i<sz-1;i++)
@@ -409,7 +379,14 @@ public:
             if(pre.second==vp[i].second && vp[i].second == next.second) continue;
             used.emplace_back(vp[i]);
         }
-        used.emplace_back(vp[sz-1]);
+        {
+            int i = sz - 1;
+            auto pre = used.back(), next = vp[0];
+            if(pre.first==vp[i].first && vp[i].first == next.first) {}
+            else if(pre.second==vp[i].second && vp[i].second == next.second) {}
+            else {used.emplace_back(vp[sz-1]);}
+        }
+        cerr << used.size() << endl;
         string sol = "";
         for(auto p:used)
         {
@@ -420,7 +397,7 @@ public:
         sol.back() = '#';
         // start point
         {
-            auto p = P(iSqs.back().x, iSqs.back().y);
+            auto p = P(iSqs[iSqs.size()/2].x, iSqs[iSqs.size()/2].y);
             string point = "(" + to_string(p.first) + "," + to_string(p.second) + ")" + ",";
             sol += point;
         }
