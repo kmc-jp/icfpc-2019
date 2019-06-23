@@ -160,10 +160,8 @@ public:
         P cur = (*itr).second;
         while(cur != ret[0])
         {
-            // _ret[cur.first][cur.second] = '$';
             assert(graph.find(cur)!=graph.end());
             ret.emplace_back(cur);
-            //if(visit.find(cur)!=visit.end()) cerr << cur.first << " " << cur.second << endl;
             visit.emplace(cur);
             cur = graph[cur];
         }
@@ -369,7 +367,7 @@ public:
         _ret  = ret;
         auto vp = route(ret);
         cerr <<"route done"<<endl;
-        // printret();
+        printret();
         vector<P> used = {vp[0]};
         int sz = vp.size();
         for(int i=1;i<sz-1;i++)
@@ -420,6 +418,8 @@ public:
 
 int main()
 {
+    // g++ -std=c++17 grid_generatir.cpp
+    // .a.out < puzzle.cond > task.desc
     string puzzle;
     cin >> puzzle;
     PuzzleParser parser(puzzle);
