@@ -228,37 +228,45 @@ public:
                     r = false;
             }
             // assert(l || r);
-            int up_l = -1, up_r = tSize + 1, down_l = -1, down_r = tSize + 1;
+            // 横の壁に繋がるか, 上の # に繋がるまで伸ばす
             if (l && r)
             {
                 // more close
                 if (p.y < tSize / 2)
                 {
-                    for (int j = p.y; j >= 0; j--)
+                    for (int j = p.y - 1; j >= 0; j--)
                     {
                         ret[p.x][j] = '#';
+                        if (p.x && ret[p.x - 1][j] == '#')
+                            break;
                     }
                 }
                 else
                 {
-                    for (int j = p.y; j < tSize; j++)
+                    for (int j = p.y + 1; j < tSize; j++)
                     {
                         ret[p.x][j] = '#';
+                        if (p.x && ret[p.x - 1][j] == '#')
+                            break;
                     }
                 }
             }
             else if (l)
             {
-                for (int j = p.y; j >= 0; j--)
+                for (int j = p.y - 1; j >= 0; j--)
                 {
                     ret[p.x][j] = '#';
+                    if (p.x && ret[p.x - 1][j] == '#')
+                        break;
                 }
             }
             else if (r)
             {
-                for (int j = p.y; j < tSize; j++)
+                for (int j = p.y + 1; j < tSize; j++)
                 {
                     ret[p.x][j] = '#';
+                    if (p.x && ret[p.x - 1][j] == '#')
+                        break;
                 }
             }
             else if (p.x != tSize - 1) // 最終行はそのままなので
