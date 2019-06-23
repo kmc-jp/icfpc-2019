@@ -1,4 +1,4 @@
 while :
 do
-  ./bench.rb run ./a.out
+  ./benchmarker/bench.rb run kabe.exe
 done
