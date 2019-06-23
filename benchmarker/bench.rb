@@ -5,6 +5,7 @@ require "pp"
 require "json"
 require "fileutils"
 require 'pathname'
+require 'parallel'
 
 class String
   def red; "\e[31m#{self}\e[0m" end
@@ -49,12 +50,13 @@ class Bench
 
     succ = 0
     ng = 0
-    @problems.each.with_index{|problem, i|
+    res_ary = Parallel.map_with_index(@problems, in_processes: 18, progress: "Solving"){|problem, i|
       problem_name = File.basename(problem, ".desc")
       puts "Problem #{i}/#{@problems.size}: #{problem_name}"
-      res = run prog, problem, result_dir
-      if res then succ += 1 else ng += 1 end
+      run prog, problem, result_dir
     }
+    succ = res_ary.count(true)
+    ng = res_ary.count(false)
     puts "Succ: #{succ}, NG: #{ng}"
     puts "./bench.rb verify #{result_dir}".green
     result_dir
