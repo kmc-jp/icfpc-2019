@@ -200,7 +200,7 @@ void output_table(const std::vector<std::string>& table) {
 }
 
 unsigned long xor128() {
-  static unsigned long x=11124012, y=31420405, z=21249089, w=21210414;
+  static unsigned long x=11259012, y=32150205, z=2112592, w=2598241;
   unsigned long t=(x^(x<<11));
   x=y; y=z; z=w;
   return ( w=(w^(w>>19))^(t^(t>>8)) );
