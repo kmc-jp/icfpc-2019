@@ -5,6 +5,7 @@
 #include <iostream>
 #include <algorithm>
 #include <map>
+#include <set>
 
 // !!!
 using namespace std;
@@ -158,14 +159,27 @@ public:
         }
         auto itr = graph.begin();
         vector<P> ret = {(*itr).first};
+        set<P> visit = {(*itr).first};
         P cur = (*itr).second;
         while(cur != ret[0])
         {
+            // _ret[cur.first][cur.second] = '$';
             assert(graph.find(cur)!=graph.end());
             ret.emplace_back(cur);
+            //if(visit.find(cur)!=visit.end()) cerr << cur.first << " " << cur.second << endl;
+            visit.emplace(cur);
             cur = graph[cur];
         }
         return ret;
+    }
+
+    void printret()
+    {
+        for(auto v:_ret)
+        {
+            for(auto x:v) cout << x;
+            cout << endl;
+        }
     }
 
     string generate()
@@ -173,16 +187,21 @@ public:
         // 各マスは未定
         auto ret = vector<vector<char>>(tSize, vector<char>(tSize, '*'));
         // 必須マスを . に
+        set<int> isx;
         for (auto p : iSqs)
         {
             // cerr << p.x << " " << p.y << endl;
             ret[p.x][p.y] = '.';
+            isx.insert(p.x);
         }
+        cerr << "iSqs done" << endl;
         int corner = 4, cmax = (vMin + vMax) / 2;
         // 禁止マスを # に
+        set<int> usedx = {-1, tSize};
         for (auto p : oSqs)
         {
             ret[p.x][p.y] = '#';
+            usedx.insert(p.x);
             // 右か左の端に繋げる
             bool l = true, r = true;
             for (int j = 0; j < tSize; j++)
@@ -195,6 +214,7 @@ public:
                     r = false;
             }
             assert(l || r);
+            int up_l=-1, up_r=tSize+1, down_l=-1, down_r=tSize+1;
             if(l && r)
             {
                 // more close 
@@ -233,7 +253,9 @@ public:
             }
             corner += 2; // 怪しい
         }
+        cerr << "oSqs done"<<endl;
         // 角の個数を調整
+        /*
         for (int i = 0; i < tSize; i++)
         {
             for (int j = 0; j < tSize; j++)
@@ -260,6 +282,57 @@ public:
                 }
             }
         }
+        */
+        int tmp = 0;
+        for(int i=3;i<tSize-3;i++)
+        {
+            auto low = usedx.lower_bound(i), up = low;
+            low--;
+            if(abs(i-(*low))<=3 || abs(i-(*up))<=3) continue;
+            if(isx.find(i)!=isx.end()) continue;
+            for(int j=0;j<tSize-4;j++)
+            {
+                ret[i][j] = '#';
+                if(j%3) continue;
+                if(ret[i-1][j]!='.')
+                {
+                    ret[i-1][j] = '#';
+                    corner+=2;
+                }
+                if(ret[i+1][j]!='.')
+                {
+                    ret[i+1][j] = '#';
+                    corner += 2;
+                }
+            }
+            tmp = i + 5;
+            break;
+        }
+        for(int i=tmp;i<tSize-3;i++)
+        {
+            auto low = usedx.lower_bound(i), up = low;
+            low--;
+            if(abs(i-(*low))<=3 || abs(i-(*up))<=3) continue;
+            if(isx.find(i)!=isx.end()) continue;
+            for(int j=0;j<tSize-4;j++)
+            {
+                ret[i][j] = '#';
+                if(j%3) continue;
+                if(ret[i-1][j]!='.')
+                {
+                    ret[i-1][j] = '#';
+                    corner+=2;
+                }
+                if(ret[i+1][j]!='.')
+                {
+                    ret[i+1][j] = '#';
+                    corner += 2;
+                }
+            }
+            break;
+        }
+        cerr << corner << endl;
+        cerr << "corner done"<<endl;
         // othello
         for(int j=0;j<tSize;j++)
         {
@@ -271,7 +344,7 @@ public:
             assert(ret[tSize-1][j]!='.');
             if(ret[tSize-2][j]=='#') ret[tSize-1][j] = '#';
         }
-        for(int i=1;i<tSize-1;i++)
+        for(int i=2;i<tSize-2;i++)
         {
             for(int j=0;j<tSize;j++)
             {
@@ -282,6 +355,22 @@ public:
                 }
             }
         }
+        for(int j=1;j<tSize-1;j++)
+        {
+            int i = 0;
+            if(ret[i][j-1]=='#' && ret[i][j+1]=='#')
+            {
+                assert(ret[i][j]!='.');
+                ret[i][j] = '#';
+            }
+            i = tSize - 1;
+            if(ret[i][j-1]=='#' && ret[i][j+1]=='#')
+            {
+                assert(ret[i][j]!='.');
+                ret[i][j] = '#';
+            }
+        }
+        cerr <<"othello done"<<endl;
         // 空いてるマスにアイテムを置く
         int index = 3;
         vector<vector<P>> itemPos(9);
@@ -305,9 +394,12 @@ public:
                     index++;
             }
         }
+        cerr << "items done"<<endl;
         assert(index == 9);
         _ret  = ret;
         auto vp = route(ret);
+        cerr <<"route done"<<endl;
+        printret();
         vector<P> used = {vp[0]};
         int sz = vp.size();
         for(int i=1;i<sz-1;i++)
@@ -324,6 +416,7 @@ public:
             string point = "(" + to_string(p.first) + "," + to_string(p.second) + ")" + ",";
             sol += point;
         }
+        cerr <<"point done"<<endl;
         sol.back() = '#';
         // start point
         {
@@ -333,6 +426,7 @@ public:
         }
         sol.back() = '#';
         sol +="#";
+        cerr << "start done"<<endl; 
         for(int i=3;i<9;i++)
         {
             for(auto p:itemPos[i])
@@ -342,6 +436,7 @@ public:
                 sol += point;
             }
         }
+        cerr <<"sol done"<<endl;
         return sol.substr(0, sol.size()-1);
     }
 };
