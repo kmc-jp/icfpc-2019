@@ -48,6 +48,8 @@ def jsonloads(i):
   return json.loads(i.replace("'", '"'))
 
 def mining(block):
+  solp = "./solver.a"
+  genp = "./generator.a"
   info = subprocess.check_output(['./lambda-cli.py','getmininginfo']).decode()
   post(u"new block\n>>>\n"+info)
   info = jsonloads(info)
@@ -61,29 +63,40 @@ def mining(block):
   with open(taskf, 'w') as f:
       f.write(info["task"])
 
-  post(u"start Solving")
-  puzzlesolf = 'problems/{}puzzle.sol'.format(block)
-  with open(puzzlesolf, "w") as o:
+  ok = True
+  post(u"*Start Solving for {}*".format(block))
+  puzzledescf = 'problems/{}puzzle.desc'.format(block)
+  with open(puzzledescf, "w") as o:
       with open(puzzlef, "r") as i:
-          solveerr = subprocess.Popen('cat',stderr=subprocess.PIPE,stdin=i,stdout=o)
-          err = solveerr.communicate()[1].decode()
-          post(u"Solve Err: " + err)
-  with open(puzzlesolf, "r") as o:
+          ps = subprocess.Popen(genp,stderr=subprocess.PIPE,stdin=i,stdout=o)
+          err = ps.communicate()[1].decode()
+          post(u"Solve Errout: " + err)
+          if ps.returncode != 0:
+              post(u"*Solve ERR* status: " + str(ps.returncode))
+              ok = False
+  with open(puzzledescf, "r") as o:
       post("Solve Result: "+ o.read())
 
   post(u"End. start Generating")
-  taskdescf = 'problems/{}task.desc'.format(block)
-  with open(taskdescf, "w") as o:
+  tasksolf = 'problems/{}task.sol'.format(block)
+  with open(tasksolf, "w") as o:
       with open(taskf, "r") as i:
-          generr = subprocess.Popen('cat',stderr=subprocess.PIPE,stdin=i,stdout=o)
-          err = generr.communicate()[1].decode()
-          post(u"Gen Err: " + err)
-  with open(taskdescf, "r") as o:
+          ps = subprocess.Popen(solp,stderr=subprocess.PIPE,stdin=i,stdout=o)
+          err = ps.communicate()[1].decode()
+          if ps.returncode != 0:
+              post(u"*Gen ERR* status: " + str(ps.returncode))
+              ok = False
+          post(u"Gen Errout: " + err)
+  with open(tasksolf, "r") as o:
       post("Gen Result: "+ o.read())
 
-  post(u"End. start Submit...")
-  sub = subprocess.check_output(['echo', './lambda-cli.py','submit',str(block),puzzlesolf,taskdescf]).decode()
-  post("Result: "+sub)
+  if ok:
+    post(u"End. start Submit...")
+    sub = subprocess.check_output(['cat',puzzledescf,tasksolf]).decode()
+    sub = subprocess.check_output(['echo', './lambda-cli.py','submit',str(block),tasksolf.puzzledescf]).decode()
+    post("Result: "+sub)
+  else:
+    post(u"*auto mining have failed. Abort submit*")
 
 def check_mining():
   blockinfo = subprocess.check_output(['./lambda-cli.py','getblockchaininfo']).decode()
