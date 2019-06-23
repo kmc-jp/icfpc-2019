@@ -116,7 +116,7 @@ Input parse(const std::string& line) {
   assert(line[index2] == '#');
   const auto [obstacles, index3] = parse_obstacles(line, index2+1);
   assert(line[index3] == '#');
-  const auto boosters = parse_boosters(line, index3+1);
+  const auto boosters = (line[index3]!='#'?parse_boosters(line, index3+1):std::vector<Booster>());
   return Input { map, point, obstacles, boosters };
 }
 

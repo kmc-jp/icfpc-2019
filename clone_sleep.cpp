@@ -326,8 +326,8 @@ private:
     dir = std::vector<std::vector<int>>(h, std::vector<int>(w, -1));
     dir[startpos.x][startpos.y] = SD;
     Point nxt = {-1, -1};
-    const int limit = h*w/6;
-    const int th = 20;
+    const int limit = aaa;
+    const int th = bbb;
     int tm = 100000000;
     while(!bfs.empty()){
       auto now = bfs.front();
@@ -522,6 +522,7 @@ public:
     engine=std::mt19937(seed_gen());
     aaa = xor128()%h*w+1;
     bbb = xor128()%(h*w/50)+1;
+    // std::cout << aaa << " " << bbb << std::endl;
     xpos = std::set<std::pair<int,int>>();
     for(int i = 0; i < h; i++){
       for(int j = 0; j < w; j++){
@@ -618,7 +619,7 @@ int main() {
       id=pad+id;
       std::string inputfile="problems/prob-"+id+".desc";
       std::string outputfile="solutions/prob-"+id+".sol"+"_"+std::to_string(k);
-      // std::cout << inputfile << std::endl;
+      std::cout << inputfile << std::endl;
       std::ifstream fin(inputfile);
 
       std::string line;
