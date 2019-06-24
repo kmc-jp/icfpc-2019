@@ -668,6 +668,7 @@ public:
       for(int i = 0; i < sz; i++){
         doMove(i, bot[i].sol[bot[i].solidx]);
       }
+      std::cout << bcount << std::endl;
       step++;
     }
     end:;
@@ -725,7 +726,7 @@ int main() {
     
     // manip fast drill tele clone
     std::vector<int> supply = {0, 0, 0, 0, 1};
-    
+
     Solver s(table, input, supply);
     // std::cout << s.solve() << std::endl;
     s.solve();
