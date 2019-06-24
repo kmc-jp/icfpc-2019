@@ -668,7 +668,6 @@ public:
       for(int i = 0; i < sz; i++){
         doMove(i, bot[i].sol[bot[i].solidx]);
       }
-      std::cout << bcount << std::endl;
       step++;
     }
     end:;
