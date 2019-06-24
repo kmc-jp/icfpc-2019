@@ -207,6 +207,42 @@ void output_table(const std::vector<std::string>& table) {
 }
 
 int main() {
+  vector<int> score(300);
+  for(int i = 1; i <= 300; i++){
+    std::string id = std::to_string(i);
+    std::string pad = "";
+    while(pad.length()+id.length()<3) pad+="0";
+    id=pad+id;
+    std::string inputfile="benchmarker/bestzip/prob-"+id+".sol";
+    std::cout << inputfile << std::endl;
+    std::ifstream fin(inputfile);
+    char c;
+    int step=0;
+    while(fin >> c){
+      if('A'<=c&&c<='Z') step++;
+      if(c=='#') break;
+    }
+    fin.close();
+    score[i-1]=step;
+  }
+  vector<int> scoreuse(300);
+  for(int i = 1; i <= 300; i++){
+    std::string id = std::to_string(i);
+    std::string pad = "";
+    while(pad.length()+id.length()<3) pad+="0";
+    id=pad+id;
+    std::string inputfile="benchmarker-buy/bestzip/prob-"+id+".sol";
+    std::cout << inputfile << std::endl;
+    std::ifstream fin(inputfile);
+    char c;
+    int step=0;
+    while(fin >> c){
+      if('A'<=c&&c<='Z') step++;
+      if(c=='#') break;
+    }
+    fin.close();
+    scoreuse[i-1]=step;
+  }
   vector<double> hw(300);
   hw[0]=21;
   for(int i = 2; i <= 300; i++){
@@ -224,17 +260,7 @@ int main() {
     auto table = to_table(input);
     hw[i-1]=((int)table.size()-1)*((int)table[0].size()-1);
   }
-  vector<int> score(300);
-  vector<int> scoreuse(300);
   vector<double> s(300);
-  std::ifstream fin("score.txt");
-  int x;
-  for(int i = 0; i < 300; i++){
-    fin >> x >> score[i];
-  }
-  for(int i = 0; i < 300; i++){
-    fin >> x >> scoreuse[i];
-  }
   ofstream fout("result");
   // fout << "id hw score score-use delta" << endl;
   for(int i=0;i<300;i++){
