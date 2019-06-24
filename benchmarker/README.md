@@ -1,10 +1,18 @@
 # benchmaker
 
+## setup
+
 ```
-./bench.rb run {prog.o} : プログラムを実行してディレクトリに吐く
-./bench.rb verify {dir} : ディレクトリの検査をしてbestをアップデートをする
-./bench.rb genzip : bestをzipに固めて bestzip.zipを作る
-./bench.rb check {prog.o} {prob-XXX.desc} : 単一実行して検査 bestは更新しない (verifyすれば更新される)
+bundle install --path=vendor/bundle
+```
+
+## usage
+
+```
+bundle exec ruby bench.rb run {prog.o} : プログラムを実行してディレクトリに吐く
+bundle exec ruby bench.rb verify {dir} : ディレクトリの検査をしてbestをアップデートをする
+bundle exec ruby bench.rb genzip : bestをzipに固めて bestzip.zipを作る
+bundle exec ruby bench.rb check {prog.o} {prob-XXX.desc} : 単一実行して検査 bestは更新しない (verifyすれば更新される)
 ```
 
 - `REDME.md` : これ
@@ -20,7 +28,6 @@
 - `bestzip/` : zipされるやつ `./bench genzip`
 - `bestzip.zip` : 提出すべきファイル `./bench genzip`
 
-TODO: 計算量で殴るための並列化
 TODO: 相対パスだとverifyとかが動かない… 適当に書きすぎた…
 TODO: verifier重すぎる。実行時間を求めるのに使うのは現実的ではない。
 

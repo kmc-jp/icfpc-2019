@@ -492,6 +492,9 @@ private:
         bot[botidp].mask[x][y]=bot[botidp].mask[x][y]&(field[x][y]!='#'&&field[x][y]!='+'?1:0);
       }
     }
+    if (bot[botidp].chargesize < h+w) { // vary small to divide
+      return;
+    }
     Point one = distantPoint({bot[botidp].pos.x, bot[botidp].pos.y}, bot[botidp].mask);
     if(one.x == -1) return;
     Point two = distantPoint(one, bot[botidp].mask);
