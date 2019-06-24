@@ -727,22 +727,27 @@ int main() {
     // fin.close();
 
   // }
+  clock_t pstart = clock();
   std::string line;
   std::getline(std::cin, line);
   const auto input = parse(line);
   auto table = to_table(input);
 
-  const int tries = 3;
   int minstep = 1000000000;
+  double dur=0;
   std::string ans;
   
-  for(int t = 0; t < tries; t++){
+  clock_t now = clock();
+  clock_t start = clock();
+  while((double)(now-pstart)/CLOCKS_PER_SEC+dur<600){
     Solver s(table, input, minstep);
     auto [tmp, tmps] = s.solve();
     if(tmp < minstep){
       minstep = tmp;
       ans = tmps;
     }
+    now = clock();
+    if(dur==0) dur = (double)(now-start)/CLOCKS_PER_SEC;
   }
 
   std::cout << ans << std::endl;
