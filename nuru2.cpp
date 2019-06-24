@@ -794,7 +794,7 @@ int main() {
     // output_table(table);
     
     // manip fast drill tele clone
-    std::vector<int> supply = {0, 0, 0, 0, 1};
+    std::vector<int> supply = {0, 0, 0, 0, };
 
     Solver s(table, input, supply);
     // std::cout << s.solve() << std::endl;
