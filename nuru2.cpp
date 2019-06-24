@@ -408,8 +408,8 @@ private:
           bfs.push({nx, ny});
           if(dest[nx][ny] == '*'){
             if(tm>limit) tm = limit;
-            if(cost > std::pow(dist[nx][ny],powt)*comp[nx][ny]*cef[nx][ny]/std::pow(yosa[nx][ny],powu)){
-              cost = std::pow(dist[nx][ny],powt)*comp[nx][ny]*cef[nx][ny]/std::pow(yosa[nx][ny],powu);
+            if(cost > std::pow(dist[nx][ny],powt)*comp[nx][ny]*cef[nx][ny]){
+              cost = std::pow(dist[nx][ny],powt)*comp[nx][ny]*cef[nx][ny];
               nxt = {nx, ny};
             }
           }
