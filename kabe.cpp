@@ -269,6 +269,7 @@ private:
   Point next;
   const int SD = 10;
   int renketu = 0;
+  int bcount = 0;
   int aaa;
 
   struct robot{
@@ -420,7 +421,6 @@ private:
   void calcRoute(int botid){
     std::string move="";
     int nx = next.x, ny = next.y;
-    int bcount = 0;
     while(dir[nx][ny] != SD){
       move.push_back(vc[dir[nx][ny]]);
       int d = dir[nx][ny];
@@ -560,7 +560,7 @@ private:
   }
 
 public:
-  Solver(const std::vector<std::string>& table, const Input& input){
+  Solver(const std::vector<std::string>& table, const Input& input, std::vector<int> supply){
     field = table;
     Point startpos = input.point;
     startpos.x++;
@@ -590,6 +590,10 @@ public:
       }
     }
     bot.push_back({startpos, 1, 0, 0, h*w, "", std::vector<std::vector<int>>(h, std::vector<int>(w, 1))});std::vector<std::vector<bool>> fl(h, std::vector<bool>(w, false));
+    assert(supply.size() == 5);
+    bcount = supply[0];
+    bot[0].cl = supply[4];
+
     cef = std::vector<std::vector<double>>(h, std::vector<double>(w, 1));
     std::queue<Point> bfs;
     for(int i = 0; i < h; i++){
@@ -719,7 +723,10 @@ int main() {
     auto table = to_table(input);
     // output_table(table);
     
-    Solver s(table, input);
+    // manip fast drill tele clone
+    std::vector<int> supply = {0, 0, 0, 0, 1};
+    
+    Solver s(table, input, supply);
     // std::cout << s.solve() << std::endl;
     s.solve();
 

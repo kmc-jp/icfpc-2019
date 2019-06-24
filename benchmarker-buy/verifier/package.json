@@ -1,0 +1,14 @@
+{
+  "name": "verifier",
+  "version": "1.0.0",
+  "description": "",
+  "main": "verifier.js",
+  "scripts": {
+    "verify": "node verifier.js"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "puppeteer": "^1.18.0"
+  }
+}

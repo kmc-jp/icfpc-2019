@@ -1,0 +1,15 @@
+GEM
+  remote: https://rubygems.org/
+  specs:
+    parallel (1.17.0)
+    ruby-progressbar (1.10.1)
+
+PLATFORMS
+  x64-mingw32
+
+DEPENDENCIES
+  parallel
+  ruby-progressbar
+
+BUNDLED WITH
+   2.0.2
