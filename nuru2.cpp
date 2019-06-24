@@ -625,7 +625,6 @@ private:
         dcount++;
       }
     }
-    std::cout << dcount << std::endl;
   }
 
 public:
