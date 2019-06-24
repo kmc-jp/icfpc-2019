@@ -6,11 +6,14 @@ using namespace std;
 
 int main(){
   vector<bool> tobuy(300, false);
-
-  int l,r;
-  cin >> l >> r;
-  for(int i = l-1; i < r; i++) tobuy[i] = true;
-
+  ifstream fin("../result");
+  int id;
+  while(1){
+    assert(fin >> id);
+    if(id==-1) break;
+    tobuy[id]=true;
+  }
+  fin.close();
   for(int id = 0; id < 300; id++){
 
     std::string num = std::to_string(id+1);
